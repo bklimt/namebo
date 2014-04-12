@@ -8,26 +8,28 @@ LIBS=\
   -lprotobuf -L$(shell brew --prefix protobuf)/lib
 
 INCLUDES=\
+  -Igen \
   -I$(shell brew --prefix glog)/include \
   -I$(shell brew --prefix gflags)/include \
   -I$(shell brew --prefix leveldb)/include \
   -I$(shell brew --prefix protobuf)/include
 
-all: bin/namebo
+all: bin/namebo bin/dump bin/generate
 
 clean:
 	rm -rf bin || true
 	rm -rf obj || true
+	rm -rf gen || true
 
-bin/namebo: obj/namebo.o obj/namebo.pb.o
-	mkdir -p bin && g++ $(LIBS) -o $@ $<
+bin/%: obj/%.o obj/namebo.pb.o
+	mkdir -p bin && g++ $(LIBS) -o $@ $^
 
-obj/namebo.o: src/namebo.cc gen/namebo.pb.h
-	mkdir -p obj && g++ $(INCLUDES) -o $@ -c src/namebo.cc
+obj/%.o: src/%.cc gen/namebo.pb.h
+	mkdir -p obj && g++ $(INCLUDES) -o $@ -c $<
 
 obj/namebo.pb.o: gen/namebo.pb.cc
 	mkdir -p obj && g++ $(INCLUDES) -o $@ -c $<
 
 gen/namebo.pb.cc gen/namebo.pb.h: src/namebo.proto
-	mkdir -p gen && $(PROTOC) --proto_path=. --cpp_out=gen src/namebo.proto
+	mkdir -p gen && $(PROTOC) --proto_path=src --cpp_out=gen src/namebo.proto
 
