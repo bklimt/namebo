@@ -1,5 +1,6 @@
+Some utilities for generating random English-like words.
 
-To install dependencies:
+To install dependencies on Mac OS X:
 
   brew install glog
   brew install gflags
@@ -16,5 +17,5 @@ To build the prefix database:
 
 To generate a random word:
 
-  ./bin/generate --db=data/map
+  ./bin/generate --prefix_db=data/map
 
