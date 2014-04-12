@@ -14,7 +14,7 @@ INCLUDES=\
   -I$(shell brew --prefix leveldb)/include \
   -I$(shell brew --prefix protobuf)/include
 
-all: bin/namebo bin/dump bin/generate
+all: bin/count bin/dump bin/generate
 
 clean:
 	rm -rf bin || true

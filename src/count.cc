@@ -1,7 +1,6 @@
 
-#include <cstdio>
-#include <cstdlib>
 #include <fstream>
+#include <iostream>
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -9,8 +8,8 @@
 
 #include "namebo.pb.h"
 
-DEFINE_string(input_file, "", "file of words to read in");
-DEFINE_string(output_file, "", "leveldb to write map to");
+DEFINE_string(input, "", "file of words to read in");
+DEFINE_string(output, "", "leveldb to write map to");
 DEFINE_int32(prefix_length, 3, "number of letters to consider");
 
 void UpdateWord(leveldb::DB *db, const std::string &prefix, char letter) {
@@ -51,25 +50,29 @@ void UpdateWord(leveldb::DB *db, const std::string &prefix, char letter) {
 
 int main(int argc, char **argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
+  google::InitGoogleLogging(argv[0]);
 
-  if (FLAGS_input_file.empty()) {
-    LOG(FATAL) << "--input_file is required";
+  if (FLAGS_input.empty()) {
+    LOG(FATAL) << "--input is required";
   }
 
-  if (FLAGS_output_file.empty()) {
-    LOG(FATAL) << "--output_file is required";
+  if (FLAGS_output.empty()) {
+    LOG(FATAL) << "--output is required";
   }
 
   leveldb::DB *db;
   leveldb::Options options;
   options.create_if_missing = true;
-  leveldb::Status status = leveldb::DB::Open(options, FLAGS_output_file, &db);
-  CHECK(status.ok()) << "Unable to open " << FLAGS_output_file << ".";
+  leveldb::Status status = leveldb::DB::Open(options, FLAGS_output, &db);
+  CHECK(status.ok()) << "Unable to open " << FLAGS_output << ".";
 
-  std::ifstream in(FLAGS_input_file);
+  std::ifstream in(FLAGS_input);
+  CHECK(in) << "Unable to open " << FLAGS_input << ".";
+
   std::string line;
   getline(in, line);
   while (in) {
+    std::cout << line << std::endl;
     std::string word = "^" + line + "$";
     for (int i = 1; i < word.size(); ++i) {
       char letter = word[i];

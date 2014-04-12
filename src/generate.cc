@@ -7,7 +7,7 @@
 
 #include "namebo.pb.h"
 
-DEFINE_string(prefix_db, "", "leveldb file with prefix data");
+DEFINE_string(prefix_db, "", "leveldb with prefix data");
 
 DEFINE_double(bigram_weight, 1.0, "weight considering 1 letter prefix");
 DEFINE_double(trigram_weight, 2.0, "weight considering 2 letter prefix");
