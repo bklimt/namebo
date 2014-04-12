@@ -1,0 +1,5 @@
+
+message PrefixData {
+  optional string letter = 1;
+}
+

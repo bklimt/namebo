@@ -1,13 +1,33 @@
 
+PROTOC=$(shell brew --prefix protobuf)/bin/protoc
+
+LIBS=\
+  -lglog -L$(shell brew --prefix glog)/lib \
+  -lgflags -L$(shell brew --prefix gflags)/lib \
+  -lleveldb -L$(shell brew --prefix leveldb)/lib \
+  -lprotobuf -L$(shell brew --prefix protobuf)/lib
+
+INCLUDES=\
+  -I$(shell brew --prefix glog)/include \
+  -I$(shell brew --prefix gflags)/include \
+  -I$(shell brew --prefix leveldb)/include \
+  -I$(shell brew --prefix protobuf)/include
+
 all: bin/namebo
 
 clean:
 	rm -rf bin || true
 	rm -rf obj || true
 
-bin/namebo: obj/namebo.o
-	mkdir bin && g++ -o $@ $<
+bin/namebo: obj/namebo.o obj/namebo.pb.o
+	mkdir -p bin && g++ $(LIBS) -o $@ $<
 
-obj/%.o: %.cc
-	mkdir obj && g++ -o $@ -c $<
+obj/namebo.o: src/namebo.cc gen/namebo.pb.h
+	mkdir -p obj && g++ $(INCLUDES) -o $@ -c src/namebo.cc
+
+obj/namebo.pb.o: gen/namebo.pb.cc
+	mkdir -p obj && g++ $(INCLUDES) -o $@ -c $<
+
+gen/namebo.pb.cc gen/namebo.pb.h: src/namebo.proto
+	mkdir -p gen && $(PROTOC) --proto_path=. --cpp_out=gen src/namebo.proto
 

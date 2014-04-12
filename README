@@ -1,0 +1,6 @@
+
+brew install glog
+brew install gflags
+brew install protobuf
+brew install leveldb
+
