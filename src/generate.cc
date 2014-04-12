@@ -10,8 +10,8 @@
 DEFINE_string(prefix_db, "", "leveldb with prefix data");
 
 DEFINE_double(bigram_weight, 1.0, "weight considering 1 letter prefix");
-DEFINE_double(trigram_weight, 2.0, "weight considering 2 letter prefix");
-DEFINE_double(quadgram_weight, 3.0, "weight considering 3 letter prefix");
+DEFINE_double(trigram_weight, 100.0, "weight considering 2 letter prefix");
+DEFINE_double(quadgram_weight, 10000.0, "weight considering 3 letter prefix");
 
 void GetPrefixData(leveldb::DB *db, const std::string &prefix,
                    PrefixData *prefix_data) {
