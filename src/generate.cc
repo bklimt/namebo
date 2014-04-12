@@ -107,14 +107,20 @@ int main(int argc, char **argv) {
   CHECK(status.ok()) << "Unable to open " << FLAGS_prefix_db << ".";
 
   std::string word = "^";
-  while (word.substr(word.size() - 1, 1) != "$" &&
-         word.substr(word.size() - 1, 1) != "?") {
+  while (word[word.size() - 1] != '$' && word[word.size() - 1] != '?') {
     PrefixData prefix_data;
     GetData(db, word, &prefix_data);
     LOG(INFO) << "DATA: " << prefix_data.ShortDebugString();
 
     word = word + ChooseNext(prefix_data);
     LOG(INFO) << "WORD: " << word;
+  }
+
+  if (word.size() > 0 && word[0] == '^') {
+    word = word.substr(1, word.size() - 1);
+  }
+  if (word.size() > 0 && word[word.size() - 1] == '$') {
+    word = word.substr(0, word.size() - 1);
   }
 
   std::cout << word << std::endl;
