@@ -3,3 +3,4 @@ obj/
 data/
 gen/
 *.swp
+parse/config/global.json
