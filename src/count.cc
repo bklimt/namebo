@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   leveldb::Status status = leveldb::DB::Open(options, FLAGS_output, &db);
   CHECK(status.ok()) << "Unable to open " << FLAGS_output << ".";
 
-  std::ifstream in(FLAGS_input);
+  std::ifstream in(FLAGS_input.c_str());
   CHECK(in) << "Unable to open " << FLAGS_input << ".";
 
   std::string line;

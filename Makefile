@@ -1,18 +1,22 @@
-
-PROTOC=$(shell brew --prefix protobuf)/bin/protoc
-
-LIBS=\
-  -lglog -L$(shell brew --prefix glog)/lib \
-  -lgflags -L$(shell brew --prefix gflags)/lib \
-  -lleveldb -L$(shell brew --prefix leveldb)/lib \
-  -lprotobuf -L$(shell brew --prefix protobuf)/lib
-
-INCLUDES=\
-  -Igen \
-  -I$(shell brew --prefix glog)/include \
-  -I$(shell brew --prefix gflags)/include \
-  -I$(shell brew --prefix leveldb)/include \
-  -I$(shell brew --prefix protobuf)/include
+UNAME := $(shell uname)
+ifeq ($(UNAME), Linux)
+  PROTOC=protoc
+  LIBS=-lglog -lgflags -lleveldb -lprotobuf
+  INCLUDES=-Igen
+else
+  PROTOC=$(shell brew --prefix protobuf)/bin/protoc
+  LIBS=\
+    -lglog -L$(shell brew --prefix glog)/lib \
+    -lgflags -L$(shell brew --prefix gflags)/lib \
+    -lleveldb -L$(shell brew --prefix leveldb)/lib \
+    -lprotobuf -L$(shell brew --prefix protobuf)/lib
+  INCLUDES=\
+    -Igen \
+    -I$(shell brew --prefix glog)/include \
+    -I$(shell brew --prefix gflags)/include \
+    -I$(shell brew --prefix leveldb)/include \
+    -I$(shell brew --prefix protobuf)/include
+endif
 
 all: bin/count bin/dump bin/generate bin/convert
 
@@ -22,7 +26,7 @@ clean:
 	rm -rf gen || true
 
 bin/%: obj/%.o obj/namebo.pb.o
-	mkdir -p bin && g++ $(LIBS) -o $@ $^
+	mkdir -p bin && g++ -o $@ $^ $(LIBS)
 
 obj/%.o: src/%.cc gen/namebo.pb.h
 	mkdir -p obj && g++ $(INCLUDES) -o $@ -c $<

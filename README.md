@@ -10,6 +10,12 @@ To install dependencies on Mac OS X:
     brew install protobuf
     brew install leveldb
 
+To install dependencies on Ubuntu 16:
+
+    sudo apt-get install libgflags-dev libgoogle-glog-dev \
+         libprotobuf-dev libleveldb-dev protobuf-compiler
+    
+
 To build the binaries:
 
     make
