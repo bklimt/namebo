@@ -4,3 +4,4 @@ data/
 gen/
 *.swp
 parse/config/global.json
+.vscode

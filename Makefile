@@ -1,39 +1,45 @@
-UNAME := $(shell uname)
-ifeq ($(UNAME), Linux)
-  PROTOC=protoc
-  LIBS=-lglog -lgflags -lleveldb -lprotobuf
-  INCLUDES=-Igen
-else
-  PROTOC=$(shell brew --prefix protobuf)/bin/protoc
-  LIBS=\
-    -lglog -L$(shell brew --prefix glog)/lib \
-    -lgflags -L$(shell brew --prefix gflags)/lib \
-    -lleveldb -L$(shell brew --prefix leveldb)/lib \
-    -lprotobuf -L$(shell brew --prefix protobuf)/lib
-  INCLUDES=\
-    -Igen \
-    -I$(shell brew --prefix glog)/include \
-    -I$(shell brew --prefix gflags)/include \
-    -I$(shell brew --prefix leveldb)/include \
-    -I$(shell brew --prefix protobuf)/include
-endif
-
-all: bin/count bin/dump bin/generate bin/convert
+all: bin/count bin/generate bin/convert bin/dump
 
 clean:
 	rm -rf bin || true
 	rm -rf obj || true
 	rm -rf gen || true
 
-bin/%: obj/%.o obj/namebo.pb.o
-	mkdir -p bin && g++ -o $@ $^ $(LIBS)
+format:
+	clang-format-3.8 -i src/*
 
-obj/%.o: src/%.cc gen/namebo.pb.h
-	mkdir -p obj && g++ $(INCLUDES) -o $@ -c $<
+.PRECIOUS: obj/%.o
 
-obj/namebo.pb.o: gen/namebo.pb.cc
-	mkdir -p obj && g++ $(INCLUDES) -o $@ -c $<
+obj/namebo.o: gen/namebo.pb.cc gen/namebo.pb.h
+	mkdir -p obj && g++ -std=c++11 -Igen -o $@ -c gen/namebo.pb.cc
+
+obj/count.o: ./src/count.cc gen/namebo.pb.h
+	mkdir -p obj && g++ -std=c++11 -Igen -o $@ -c ./src/count.cc
+
+obj/generate.o: ./src/generate.cc gen/namebo.pb.h
+	mkdir -p obj && g++ -std=c++11 -Igen -o $@ -c ./src/generate.cc
+
+bin/count: obj/count.o obj/namebo.o
+	mkdir -p bin && g++ -o $@ $^ -lprotobuf -lgflags -lglog -lleveldb
 
 gen/namebo.pb.cc gen/namebo.pb.h: src/namebo.proto
-	mkdir -p gen && $(PROTOC) --proto_path=src --cpp_out=gen src/namebo.proto
+	mkdir -p gen && protoc --proto_path=src --cpp_out=gen $^
+
+obj/convert.o: ./src/convert.cc gen/namebo.pb.h
+	mkdir -p obj && g++ -std=c++11 -Igen -o $@ -c ./src/convert.cc
+
+obj/dump.o: ./src/dump.cc gen/namebo.pb.h
+	mkdir -p obj && g++ -std=c++11 -Igen -o $@ -c ./src/dump.cc
+
+bin/generate: obj/generate.o obj/namebo.o
+	mkdir -p bin && g++ -o $@ $^ -lprotobuf -lgflags -lglog -lleveldb
+
+bin/convert: obj/convert.o obj/namebo.o
+	mkdir -p bin && g++ -o $@ $^ -lprotobuf -lgflags -lglog -lleveldb
+
+bin/dump: obj/dump.o obj/namebo.o
+	mkdir -p bin && g++ -o $@ $^ -lprotobuf -lgflags -lglog -lleveldb
+
+obj/segmenter.o: ./src/segmenter.cc ./src/segmenter.h
+	mkdir -p obj && g++ -std=c++11 -Igen -o $@ -c ./src/segmenter.cc
 
