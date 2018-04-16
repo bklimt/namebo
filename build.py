@@ -163,7 +163,12 @@ def find_protos(targets):
       targets[name + '_pb'] = src
       targets[name + '.o'] = proto_lib(name, deps=[src, protobuf])
 
+
+# returns True if it needs to be run again.
 def find_libs(targets, sysdeps):
+  added = []
+  skipped = []
+  libs = []
   for dirpath, dirnames, filenames in os.walk('./src'):
     for filename in filenames:
       filename = os.path.join(dirpath, filename)
@@ -172,8 +177,10 @@ def find_libs(targets, sysdeps):
       h_file = filename
       cc_file = filename[:-2] + '.cc'
       name = h_file[6:-2]
+      if (name + '.o') in targets:
+        continue
       if not os.path.isfile(cc_file):
-        raise '.h files must have .cc files (for now)'
+        raise Exception('.h files must have .cc files (for now)')
       h_local, h_sys = includes_from_file(h_file)
       cc_local, cc_sys = includes_from_file(cc_file)
       # TODO(klimt): This is kinda wrong, because cc file includes shouldn't be transitive headers.
@@ -181,16 +188,25 @@ def find_libs(targets, sysdeps):
       sys_includes = h_sys + cc_sys
       # Remove proto files.
       lib_includes = [x for x in local_includes if not x.endswith('.pb.h')]
+      proto_includes = [x for x in local_includes if x.endswith('.pb.h')]
       # Remove this lib's header from itself.
       lib_includes = [x for x in lib_includes if x != (name + '.h')]
-      if len(lib_includes):
-        raise 'transitive lib includes are not supported yet'
       deps = []
-      # proto deps
-      for include in local_includes:
-        if include.endswith('.pb.h'):
-          dep = targets[include[:-5] + '.o']
+      # Look up the library includes, and skip if any aren't loaded yet.
+      skip = False
+      for include in lib_includes:
+        if (include[:-1] + 'o') in targets:
+          dep = targets[include[:-1] + 'o']
           deps.append(dep)
+        else:
+          skipped.append(include)
+          skip = True
+      if skip:
+        continue
+      # proto deps
+      for include in proto_includes:
+        dep = targets[include[:-5] + '.o']
+        deps.append(dep)
       # sys deps
       for include in sys_includes:
         for dep in sysdeps[include]:
@@ -200,6 +216,12 @@ def find_libs(targets, sysdeps):
         srcs = [cc_file],
         hdrs = [h_file],
         deps = deps)
+      added.append(name)
+  if skipped:
+    if added:
+      return find_libs(targets, sysdeps)
+    else:
+      raise Exception('circular dependency detected with: %s' % ' '.join(skipped))
 
 def find_bins(targets, sysdeps):
   for dirpath, dirnames, filenames in os.walk('./src'):
@@ -218,7 +240,7 @@ def find_bins(targets, sysdeps):
       deps = []
       # lib deps
       for include in lib_includes:
-        dep = targets[include[:-2]]
+        dep = targets[include[:-2] + '.o']
         deps.append(dep)
       # proto deps
       for include in local_includes:
@@ -248,16 +270,19 @@ if macos:
   gflags = brew(name='gflags')
   glog = brew(name='glog')
   leveldb = brew(name='leveldb')
+  gtest = brew(name='gtest')
   openssl = syslib(
     includes=['-I$(shell brew --prefix openssl)/include'],
     libs=['-lcrypto', '-L$(shell brew --prefix openssl)/lib'])
 else:
   gflags = installed('gflags')
   glog = installed('glog')
+  gtest = syslib(includes=[], libs=['-lgtest', '-lpthread', '-lgtest_main'])
   leveldb = installed('leveldb')
   openssl = syslib()
 
 sysdeps = {
+  'cstring': [],
   'dirent.h': [],
   'errno.h': [],
   'fcntl.h': [],
@@ -274,6 +299,7 @@ sysdeps = {
   'gflags/gflags.h': [gflags],
   'glog/logging.h': [glog],
   'google/protobuf/stubs/status.h': [protobuf],
+  'gtest/gtest.h': [gtest],
   'leveldb/db.h': [leveldb],
   'openssl/md5.h': [openssl],
 }

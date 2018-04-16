@@ -9,12 +9,13 @@ To install dependencies on Mac OS X:
     brew install gflags
     brew install protobuf
     brew install leveldb
+    brew install gtest
 
 To install dependencies on Ubuntu 16:
 
     sudo apt-get install libgflags-dev libgoogle-glog-dev \
-         libprotobuf-dev libleveldb-dev protobuf-compiler
-    
+         libprotobuf-dev libleveldb-dev protobuf-compiler \
+         libgtest-dev
 
 To build the binaries:
 

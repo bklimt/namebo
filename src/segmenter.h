@@ -1,5 +1,6 @@
 
 #include <string>
+#include "string_view.h"
 
 class Segmenter {
  public:
@@ -10,26 +11,11 @@ class Segmenter {
     return pos_ >= text_.size();
   }
 
-  std::string_view next() {
-    int start_ = pos_;
-    // Go to the next break character.
-    while (pos_ < text_.size()) {
-      if (text_[pos_] == ' ') {
-        break;
-      }
-      pos_++;
-    }
-    // Skip to the next valid character.
-    while (pos_ < text_.size()) {
-      if (text_[pos_] != ' ') {
-        break;
-      }
-      pos_++;
-    }
-    return std::string_view(text_.data() + start_, pos_ - start_);
-  }
+  string_view next();
 
  private:
+  void SkipWhitespace();
+
   int pos_;
   std::string text_;
 };
