@@ -114,6 +114,10 @@ int main(int argc, char **argv) {
 
     word = word + ChooseNext(prefix_data);
     LOG(INFO) << "WORD: " << word;
+
+    if (word.size() > 1000) {
+      break;
+    }
   }
 
   if (word.size() > 0 && word[0] == '^') {

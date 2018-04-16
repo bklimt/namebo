@@ -73,13 +73,20 @@ int main(int argc, char **argv) {
   getline(in, line);
   while (in) {
     std::cout << line << std::endl;
-    std::string word = "^" + line + "$";
-    for (int i = 1; i < word.size(); ++i) {
-      char letter = word[i];
-      for (int j = 1; j <= FLAGS_prefix_length; ++j) {
-        if (i - j >= 0) {
-          std::string prefix = word.substr(i - j, j);
-          UpdateWord(db, prefix, letter);
+    if (!line.empty()) {
+      std::string word = "^" + line + "$";
+      for (int i = 1; i < word.size(); ++i) {
+        char letter = word[i];
+        // TODO(klimt): Make this handle unicode better than this.
+        if (!(isalnum(letter) || letter == ' ' || letter == '.' || letter == '^' || letter == '$')) {
+          letter = ' ';
+          word[i] = letter;
+        }
+        for (int j = 1; j <= FLAGS_prefix_length; ++j) {
+          if (i - j >= 0) {
+            std::string prefix = word.substr(i - j, j);
+            UpdateWord(db, prefix, letter);
+          }
         }
       }
     }
