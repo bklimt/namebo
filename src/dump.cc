@@ -23,20 +23,17 @@ int main(int argc, char **argv) {
   leveldb::Status status = leveldb::DB::Open(options, FLAGS_db, &db);
   CHECK(status.ok()) << "Unable to open " << FLAGS_db << ".";
 
-  leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+  leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
   for (it->SeekToFirst(); it->Valid(); it->Next()) {
     PrefixData prefix_data;
     CHECK(prefix_data.ParseFromString(it->value().ToString()));
-    std::cout << it->key().ToString()
-              << ": "
-              << prefix_data.ShortDebugString()
+    std::cout << it->key().ToString() << ": " << prefix_data.ShortDebugString()
               << std::endl;
   }
   CHECK(it->status().ok());
-  delete it; 
+  delete it;
 
   delete db;
 
   return 0;
 }
-

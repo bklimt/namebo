@@ -78,7 +78,8 @@ int main(int argc, char **argv) {
       for (int i = 1; i < word.size(); ++i) {
         char letter = word[i];
         // TODO(klimt): Make this handle unicode better than this.
-        if (!(isalnum(letter) || letter == ' ' || letter == '.' || letter == '^' || letter == '$')) {
+        if (!(isalnum(letter) || letter == ' ' || letter == '.' ||
+              letter == '^' || letter == '$')) {
           letter = ' ';
           word[i] = letter;
         }
@@ -97,4 +98,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-

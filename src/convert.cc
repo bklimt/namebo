@@ -2,7 +2,6 @@
  * Creates a JSON representation of the weighted frequency map.
  */
 
-
 #include <iostream>
 
 #include <gflags/gflags.h>
@@ -115,7 +114,7 @@ int main(int argc, char **argv) {
   std::cout << "{" << std::endl;
 
   bool first = true;
-  leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+  leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
   for (it->SeekToFirst(); it->Valid(); it->Next()) {
     if (!first) {
       std::cout << ",";
@@ -142,4 +141,3 @@ int main(int argc, char **argv) {
   delete db;
   return 0;
 }
-

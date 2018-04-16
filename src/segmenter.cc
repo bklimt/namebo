@@ -30,4 +30,3 @@ string_view Segmenter::next() {
   SkipWhitespace();
   return string_view(text_.data() + start_, end_ - start_);
 }
-

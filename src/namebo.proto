@@ -8,4 +8,3 @@ message SuffixData {
   optional string letter = 1;
   optional double count = 2;
 }
-

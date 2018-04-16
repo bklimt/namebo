@@ -3,8 +3,7 @@
 
 #include "segmenter.h"
 
-struct SegmenterTest : testing::Test {
-};
+struct SegmenterTest : testing::Test {};
 
 TEST_F(SegmenterTest, BasicTest) {
   Segmenter seg("  foo bar  baz.qux?   ");
