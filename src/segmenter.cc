@@ -12,21 +12,29 @@ void Segmenter::SkipWhitespace() {
 
 string_view Segmenter::next() {
   SkipWhitespace();
-  int start_ = pos_;
+  int start = pos_;
   // If it's a symbol, just read the symbol.
   if (pos_ < text_.size() && !isalnum(text_[pos_])) {
-    pos_++;
-    SkipWhitespace();
-    return string_view(text_.data() + start_, 1);
-  }
-  while (pos_ < text_.size()) {
-    if (!isalnum(text_[pos_])) {
-      break;
+    if ((text_[pos_] & 0x80) == 0) {
+      // It's an ascii character.
+      pos_++;
+    } else {
+      // It's a UTF-8 rune.
+      while ((text_[pos_] & 0x80) != 0) {
+        pos_++;
+      }
     }
-    pos_++;
+  } else {
+    // It's a word made of ascii alphanumeric characters.
+    while (pos_ < text_.size()) {
+      if (!isalnum(text_[pos_])) {
+        break;
+      }
+      pos_++;
+    }
   }
-  int end_ = pos_;
+  int end = pos_;
   // Skip to the next valid character.
   SkipWhitespace();
-  return string_view(text_.data() + start_, end_ - start_);
+  return string_view(text_.data() + start, end - start);
 }
