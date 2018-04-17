@@ -11,15 +11,17 @@ void Segmenter::SkipWhitespace() {
 }
 
 string_view Segmenter::next() {
+  // TODO(klimt): Make make this handle contractions better?
+  // TODO(klimt): Segment unicode sequences better.
   SkipWhitespace();
   int start = pos_;
-  // If it's a symbol, just read the symbol.
   if (pos_ < text_.size() && !isalnum(text_[pos_])) {
+    // It's not alphanumeric.
     if ((text_[pos_] & 0x80) == 0) {
       // It's an ascii character.
       pos_++;
     } else {
-      // It's a UTF-8 rune.
+      // It's a series of UTF-8 runes.
       while ((text_[pos_] & 0x80) != 0) {
         pos_++;
       }
