@@ -8,3 +8,14 @@ message SuffixData {
   optional string letter = 1;
   optional double count = 2;
 }
+
+// Data for the whole corpus.
+message GlobalData {
+  // The number of words which occur exactly once.
+  optional int32 singleton_count = 1;
+}
+
+message PhraseData {
+  // The number of times this phrase appears in total.
+  optional int32 count = 1;
+}

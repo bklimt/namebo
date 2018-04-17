@@ -1,3 +1,5 @@
+#ifndef __SEGMENTER_H__
+#define __SEGMENTER_H__
 
 #include <string>
 #include "string_view.h"
@@ -16,3 +18,5 @@ class Segmenter {
   int pos_;
   std::string text_;
 };
+
+#endif  // __SEGMENTER_H__

@@ -1,3 +1,5 @@
+#ifndef __STRING_VIEW_H__
+#define __STRING_VIEW_H__
 
 #include <cstring>
 #include <iostream>
@@ -30,3 +32,5 @@ class string_view {
 };
 
 std::ostream &operator<<(std::ostream &os, const string_view &s);
+
+#endif  // __STRING_VIEW_H__
