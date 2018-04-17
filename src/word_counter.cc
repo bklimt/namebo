@@ -89,14 +89,33 @@ void WordCounter::SetPhraseData(string_view phrase, const PhraseData& data) {
 
 void WordCounter::Add(string_view word, string_view prev1, string_view prev2) {
   // Update unigram entry for word.
-  // Update the bigram entry for "prev1 word".
-  // Update the bigram suffix entry for "prev1".
-  // Update the trigram entry for "prev2 prev1 word".
-  // Update the trigram suffix entry for "prev2 prev1".
+  std::string unigram = word.ToString();
+  PhraseData unigram_data = GetPhraseData(unigram);
+  unigram_data.set_count(unigram_data.count() + 1);
+  SetPhraseData(unigram, unigram_data);
 
-  // TODO(klimt): Okay, the crappy thing about caching like this is
-  // that write batches don't let you atomic increment, and you may
-  // have already incremented a struct once.
+  // Update the bigram entry for "prev1 word".
+  std::string bigram = prev1.ToString() + " " + unigram;
+  PhraseData bigram_data = GetPhraseData(bigram);
+  bigram_data.set_count(bigram_data.count() + 1);
+  SetPhraseData(bigram, bigram_data);
+
+  // Update the trigram entry for "prev2 prev1 word".
+  std::string trigram = prev2.ToString() + " " + bigram;
+  PhraseData trigram_data = GetPhraseData(trigram);
+  trigram_data.set_count(trigram_data.count() + 1);
+  SetPhraseData(trigram, trigram_data);
+
+  // Update the global data.
+  global_.set_total_count(global_.total_count());
+  if (unigram_data.count() == 1) {
+    global_.set_singleton_count(global_.singleton_count() + 1);
+  } else if (unigram_data.count() == 2) {
+    global_.set_singleton_count(global_.singleton_count() - 1);
+  }
 
   unsynced_++;
+  if (unsynced_ > 1000) {
+    Flush();
+  }
 }
