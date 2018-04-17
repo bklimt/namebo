@@ -13,6 +13,9 @@ message SuffixData {
 message GlobalData {
   // The number of words which occur exactly once.
   optional int32 singleton_count = 1;
+
+  // The total number of occurrences in the text.
+  optional int32 total_count = 2;
 }
 
 message PhraseData {

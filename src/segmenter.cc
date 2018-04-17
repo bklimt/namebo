@@ -10,10 +10,9 @@ void Segmenter::SkipWhitespace() {
   }
 }
 
-string_view Segmenter::next() {
+string_view Segmenter::Next() {
   // TODO(klimt): Make make this handle contractions better?
   // TODO(klimt): Segment unicode sequences better.
-  SkipWhitespace();
   int start = pos_;
   if (pos_ < text_.size() && !isalnum(text_[pos_])) {
     // It's not alphanumeric.

@@ -6,11 +6,11 @@
 
 class Segmenter {
  public:
-  Segmenter(std::string &&text) : pos_(0), text_(text) {}
+  Segmenter(std::string &&text) : pos_(0), text_(text) { SkipWhitespace(); }
 
-  bool done() { return pos_ >= text_.size(); }
+  bool Valid() { return pos_ < text_.size(); }
 
-  string_view next();
+  string_view Next();
 
  private:
   void SkipWhitespace();

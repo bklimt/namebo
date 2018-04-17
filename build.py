@@ -289,8 +289,10 @@ sysdeps = {
   'fstream': [],
   'iostream': [],
   'map': [],
+  'memory': [],
   'stdio.h': [],
   'stdlib.h': [],
+  'streambuf': [],
   'string': [],
   'sys/mman.h': [],
   'sys/stat.h': [],
@@ -301,6 +303,7 @@ sysdeps = {
   'google/protobuf/stubs/status.h': [protobuf],
   'gtest/gtest.h': [gtest],
   'leveldb/db.h': [leveldb],
+  'leveldb/write_batch.h': [leveldb],
   'openssl/md5.h': [openssl],
 }
 
