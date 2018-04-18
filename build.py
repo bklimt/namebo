@@ -282,6 +282,8 @@ else:
   openssl = syslib()
 
 sysdeps = {
+  'algorithm': [],
+  'cmath': [],
   'cstring': [],
   'dirent.h': [],
   'errno.h': [],

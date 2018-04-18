@@ -6,15 +6,100 @@
 struct WordCounterTest : testing::Test {};
 
 TEST_F(WordCounterTest, BasicTest) {
-  WordCounter wc("data/test");
+  srand(time(NULL));
+  {
+    WordCounter wc("data/test");
 
-  wc.Add("foo", "^", "^");
-  wc.Add("bar", "foo", "^");
-  wc.Add("baz", "foo", "bar");
+    // ^ foo bar baz baz foo bar qux $
+    wc.Add("foo", "^", "^");
+    wc.Add("bar", "foo", "^");
+    wc.Add("baz", "bar", "foo");
+    wc.Add("baz", "baz", "bar");
+    wc.Add("foo", "baz", "baz");
+    wc.Add("bar", "foo", "baz");
+    wc.Add("qux", "bar", "foo");
+    wc.Add("$", "qux", "bar");
 
-  // TODO(klimt): Test the actual counts.
+    // Test the total counts.
+    EXPECT_EQ(8, wc.GetTotalCount());
+    EXPECT_EQ(2, wc.GetSingletonCount());
 
-  wc.Flush();
+    // Test the unigram counts.
+    EXPECT_EQ(0, wc.GetCount("^"));
+    EXPECT_EQ(2, wc.GetCount("foo"));
+    EXPECT_EQ(2, wc.GetCount("bar"));
+    EXPECT_EQ(2, wc.GetCount("baz"));
+    EXPECT_EQ(1, wc.GetCount("qux"));
+    EXPECT_EQ(1, wc.GetCount("$"));
 
-  // TODO(klimt): Test the actual counts again.
+    // Test the bigram counts.
+    EXPECT_EQ(1, wc.GetCount("foo", "^"));
+    EXPECT_EQ(2, wc.GetCount("bar", "foo"));
+    EXPECT_EQ(1, wc.GetCount("baz", "bar"));
+    EXPECT_EQ(1, wc.GetCount("baz", "baz"));
+    EXPECT_EQ(1, wc.GetCount("foo", "baz"));
+    EXPECT_EQ(1, wc.GetCount("qux", "bar"));
+    EXPECT_EQ(1, wc.GetCount("$", "qux"));
+
+    // Test the trigram counts.
+    EXPECT_EQ(1, wc.GetCount("foo", "^", "^"));
+    EXPECT_EQ(1, wc.GetCount("bar", "foo", "^"));
+    EXPECT_EQ(1, wc.GetCount("baz", "bar", "foo"));
+    EXPECT_EQ(1, wc.GetCount("baz", "baz", "bar"));
+    EXPECT_EQ(1, wc.GetCount("foo", "baz", "baz"));
+    EXPECT_EQ(1, wc.GetCount("bar", "foo", "baz"));
+    EXPECT_EQ(1, wc.GetCount("qux", "bar", "foo"));
+    EXPECT_EQ(1, wc.GetCount("$", "qux", "bar"));
+
+    wc.GetNext("bar", "foo", 0.2, 0.4, 0.4);
+  }
+  {
+    WordCounter wc("data/test");
+
+    // Test the total counts.
+    EXPECT_EQ(8, wc.GetTotalCount());
+    EXPECT_EQ(2, wc.GetSingletonCount());
+
+    // Test the unigram counts.
+    EXPECT_EQ(0, wc.GetCount("^"));
+    EXPECT_EQ(2, wc.GetCount("foo"));
+    EXPECT_EQ(2, wc.GetCount("bar"));
+    EXPECT_EQ(2, wc.GetCount("baz"));
+    EXPECT_EQ(1, wc.GetCount("qux"));
+    EXPECT_EQ(1, wc.GetCount("$"));
+
+    // Test the bigram counts.
+    EXPECT_EQ(1, wc.GetCount("foo", "^"));
+    EXPECT_EQ(2, wc.GetCount("bar", "foo"));
+    EXPECT_EQ(1, wc.GetCount("baz", "bar"));
+    EXPECT_EQ(1, wc.GetCount("baz", "baz"));
+    EXPECT_EQ(1, wc.GetCount("foo", "baz"));
+    EXPECT_EQ(1, wc.GetCount("qux", "bar"));
+    EXPECT_EQ(1, wc.GetCount("$", "qux"));
+
+    // Test the trigram counts.
+    EXPECT_EQ(1, wc.GetCount("foo", "^", "^"));
+    EXPECT_EQ(1, wc.GetCount("bar", "foo", "^"));
+    EXPECT_EQ(1, wc.GetCount("baz", "bar", "foo"));
+    EXPECT_EQ(1, wc.GetCount("baz", "baz", "bar"));
+    EXPECT_EQ(1, wc.GetCount("foo", "baz", "baz"));
+    EXPECT_EQ(1, wc.GetCount("bar", "foo", "baz"));
+    EXPECT_EQ(1, wc.GetCount("qux", "bar", "foo"));
+    EXPECT_EQ(1, wc.GetCount("$", "qux", "bar"));
+  }
+}
+
+TEST_F(WordCounterTest, LessTest) {
+  EXPECT_TRUE(Less("abc", "def"));
+  EXPECT_FALSE(Less("abc", "ab"));
+  EXPECT_TRUE(Less("ab", "abc"));
+  EXPECT_TRUE(Less("", "abc"));
+  EXPECT_FALSE(Less("", ""));
+}
+
+TEST_F(WordCounterTest, HasPrefixTest) {
+  EXPECT_TRUE(HasPrefix("foobar", "foo"));
+  EXPECT_TRUE(HasPrefix("foo", "foo"));
+  EXPECT_FALSE(HasPrefix("fo", "foo"));
+  EXPECT_FALSE(HasPrefix("foo", "foobar"));
 }

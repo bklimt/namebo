@@ -12,26 +12,41 @@
 
 class WordCounter {
  public:
-  WordCounter(string_view path);
+  WordCounter(const std::string &path);
   ~WordCounter() { Flush(); }
 
   void Flush();
   void Add(string_view word, string_view prev1, string_view prev2);
 
- private:
-  PhraseData GetPhraseData(string_view phrase);
-  void SetPhraseData(string_view phrase, const PhraseData& data);
+  // Randomly picks a next word based on the probabilities in the table.
+  std::string GetNext(string_view prev1, string_view prev2,
+                      double unigram_weight, double bigram_weight,
+                      double trigram_weight);
+
+  int32_t GetTotalCount() { return global_.total_count(); }
+  int32_t GetSingletonCount() { return global_.singleton_count(); }
+
+  int32_t GetCount(string_view word);
+  int32_t GetCount(string_view word, string_view prev1);
+  int32_t GetCount(string_view word, string_view prev1, string_view prev2);
 
  private:
-  int32_t unsynced_;
+  PhraseData GetPhraseData(leveldb::DB *db, string_view phrase);
+  void SetPhraseData(leveldb::DB *db, string_view phrase,
+                     const PhraseData &data);
 
-  GlobalData global_;
+ private:
   std::string global_path_;
+  GlobalData global_;
+  int32_t global_unsynced_;
 
-  std::string phrase_path_;
-  std::unique_ptr<leveldb::DB> phrases_;
-  std::unique_ptr<leveldb::WriteBatch> phrase_batch_;
-  std::map<std::string, PhraseData> phrase_cache_;
+  std::unique_ptr<leveldb::DB> unigrams_;
+  std::unique_ptr<leveldb::DB> bigrams_;
+  std::unique_ptr<leveldb::DB> trigrams_;
 };
+
+bool Less(leveldb::Slice s1, leveldb::Slice s2);
+bool Equal(leveldb::Slice s1, leveldb::Slice s2);
+bool HasPrefix(leveldb::Slice s, leveldb::Slice pre);
 
 #endif  // __WORD_COUNTER_H__
