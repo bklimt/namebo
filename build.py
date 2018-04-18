@@ -79,7 +79,7 @@ class library:
     s = self.obj() + ': ' 
     s = s + ' '.join(self.srcs) + ' '
     s = s + ' '.join(self.all_headers()) + '\n'
-    s = s + '\t' + 'mkdir -p obj && g++ -std=c++11 '
+    s = s + '\t' + 'mkdir -p obj && g++ -g -std=c++11 '
     s = s + inc
     s = s + '-Igen -o $@ -c ' + ' '.join(self.srcs) + '\n'
     return s
@@ -125,7 +125,7 @@ class binary:
   def make(self):
     s = 'bin/' + self.name + ': '
     s = s + ' '.join(self.all_obj()) + '\n'
-    s = s + '\tmkdir -p bin && g++ -o $@ $^ '
+    s = s + '\tmkdir -p bin && g++ -g -o $@ $^ '
     s = s + ' '.join(self.all_libs())
     s = s + '\n'
     return s

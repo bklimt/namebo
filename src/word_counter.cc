@@ -162,14 +162,24 @@ bool HasPrefix(leveldb::Slice s, leveldb::Slice pre) {
 std::string WordCounter::GetNext(string_view prev1, string_view prev2,
                                  double unigram_weight, double bigram_weight,
                                  double trigram_weight) {
+  // HACK: This isn't really right. We should fix the counts for ^.
+  // If the previous words were "^", then don't use their weights.
+  if (prev1 == "^") {
+    unigram_weight = 1.0;
+    bigram_weight = 0.0;
+    trigram_weight = 0.0;
+  }
+
   // Get the global data.
   int32_t total_count = global_.total_count();
   int32_t singleton_count = global_.singleton_count();
   double singleton_p = static_cast<double>(singleton_count) / total_count;
-  // LOG(INFO) << "singleton p = " << singleton_p;
+  LOG(INFO) << "singleton p = " << singleton_p;
 
+  // TODO(klimt): This is all wrong, because the probabilities for the
+  // suffixes of a novel ngram will add up to 0, not 1.
   double n = static_cast<double>(random()) / RAND_MAX;
-  // LOG(INFO) << "n = " << n;
+  LOG(INFO) << "n = " << n;
 
   // Get unigram entry for "prev1".
   PhraseData bigram_prefix_data = GetPhraseData(unigrams_.get(), KEY(prev1));
@@ -177,6 +187,18 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
   // Get the bigram entry for "prev2 prev1".
   PhraseData trigram_prefix_data =
       GetPhraseData(bigrams_.get(), KEY(prev2, prev1));
+
+  // If the trigram doesn't exist, fall back to unigram and bigram data.
+  if (trigram_prefix_data.count() == 0) {
+    unigram_weight += trigram_weight / 2.0;
+    bigram_weight += trigram_weight / 2.0;
+    trigram_weight = 0.0;
+  }
+  // If the bigram doesn't exist, fall back to unigram data.
+  if (bigram_prefix_data.count() == 0) {
+    unigram_weight += bigram_weight;
+    bigram_weight = 0.0;
+  }
 
   // Iterate over all terms.
   std::unique_ptr<leveldb::Iterator> it(
@@ -194,29 +216,33 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
         GetPhraseData(trigrams_.get(), KEY(prev2, prev1, it->key()));
 
     double unigram_p = static_cast<double>(unigram_data.count()) / total_count;
-    double bigram_p =
-        static_cast<double>(bigram_data.count()) / bigram_prefix_data.count();
-    double trigram_p =
-        static_cast<double>(trigram_data.count()) / trigram_prefix_data.count();
+    double bigram_p = (bigram_prefix_data.count() == 0)
+                          ? 0.0
+                          : static_cast<double>(bigram_data.count()) /
+                                bigram_prefix_data.count();
+    double trigram_p = (trigram_prefix_data.count() == 0)
+                           ? 0.0
+                           : static_cast<double>(trigram_data.count()) /
+                                 trigram_prefix_data.count();
     double p = (unigram_weight * unigram_p + bigram_weight * bigram_p +
                 trigram_weight * trigram_p) /
                (unigram_weight + bigram_weight + trigram_weight);
 
-    /*
-    LOG(INFO) << "word: " << it->key();
-    LOG(INFO) << "unigram prob: " << unigram_data.count() << " / "
-              << total_count;
-    LOG(INFO) << " bigram prob: " << bigram_data.count() << " / "
-              << bigram_prefix_data.count();
-    LOG(INFO) << "trigram prob: " << trigram_data.count() << " / "
-              << trigram_prefix_data.count();
-    LOG(INFO) << "p = " << p;
-    */
     n -= p;
     if (n < 0) {
-      // LOG(INFO) << "CHOSE: " << it->key();
+      LOG(INFO) << "word: " << it->key();
+      LOG(INFO) << "bigram prefix: " << KEY(prev1);
+      LOG(INFO) << "trigram prefix: " << KEY(prev2, prev1);
+      LOG(INFO) << "unigram prob: " << unigram_data.count() << " / "
+                << total_count;
+      LOG(INFO) << " bigram prob: " << bigram_data.count() << " / "
+                << bigram_prefix_data.count();
+      LOG(INFO) << "trigram prob: " << trigram_data.count() << " / "
+                << trigram_prefix_data.count();
+      LOG(INFO) << "p = " << p;
       return it->key().ToString();
     }
   }
   CHECK(it->status().ok()) << "Unable to iterate over unigrams.";
+  LOG(FATAL) << "Reached end of unigram list with remaining n = " << n;
 }
