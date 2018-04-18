@@ -35,11 +35,12 @@ int main(int argc, char **argv) {
     if (!line.empty()) {
       std::string prev1 = "^";
       std::string prev2 = "^";
-      std::string text = line + "$";
+      std::string text = " " + line + "$";
       Segmenter segmenter(std::move(text));
       while (segmenter.Valid()) {
-        string_view word = segmenter.Next();
-        wc.Add(word, prev1, prev2);
+        Segment segment = segmenter.Next();
+        string_view word = segment.token;
+        wc.Add(word, prev1, prev2, segment.space_before);
         prev2 = prev1;
         prev1 = word.ToString();
       }

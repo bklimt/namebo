@@ -98,11 +98,15 @@ void WordCounter::SetPhraseData(leveldb::DB *db, string_view phrase,
   CHECK(status.ok()) << "Unable to write " << phrase << " to leveldb.";
 }
 
-void WordCounter::Add(string_view word, string_view prev1, string_view prev2) {
+void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
+                      bool space_before) {
   // Update unigram entry for word.
   std::string unigram = KEY(word).ToString();
   PhraseData unigram_data = GetPhraseData(unigrams_.get(), unigram);
   unigram_data.set_count(unigram_data.count() + 1);
+  if (!space_before) {
+    unigram_data.set_no_space_count(unigram_data.no_space_count() + 1);
+  }
   SetPhraseData(unigrams_.get(), unigram, unigram_data);
 
   // Update the bigram entry for "prev1 word".
@@ -230,7 +234,13 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
 
     n -= p;
     if (n < 0) {
-      LOG(INFO) << "word: " << it->key();
+      std::string word = it->key().ToString();
+      // TODO(klimt): Make this random?
+      if (unigram_data.no_space_count() <= unigram_data.count() / 2) {
+        word = std::string(" ") + word;
+      }
+
+      LOG(INFO) << "word: " << word;
       LOG(INFO) << "bigram prefix: " << KEY(prev1);
       LOG(INFO) << "trigram prefix: " << KEY(prev2, prev1);
       LOG(INFO) << "unigram prob: " << unigram_data.count() << " / "
@@ -240,7 +250,8 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
       LOG(INFO) << "trigram prob: " << trigram_data.count() << " / "
                 << trigram_prefix_data.count();
       LOG(INFO) << "p = " << p;
-      return it->key().ToString();
+
+      return word;
     }
   }
   CHECK(it->status().ok()) << "Unable to iterate over unigrams.";

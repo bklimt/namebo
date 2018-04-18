@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
       break;
     }
 
-    printf("%s ", word.c_str());
+    printf("%s", word.c_str());
     LOG(INFO) << word;
   }
 

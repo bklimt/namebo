@@ -16,7 +16,8 @@ class WordCounter {
   ~WordCounter() { Flush(); }
 
   void Flush();
-  void Add(string_view word, string_view prev1, string_view prev2);
+  void Add(string_view word, string_view prev1, string_view prev2,
+           bool space_before);
 
   // Randomly picks a next word based on the probabilities in the table.
   std::string GetNext(string_view prev1, string_view prev2,

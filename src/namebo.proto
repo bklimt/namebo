@@ -21,4 +21,7 @@ message GlobalData {
 message PhraseData {
   // The number of times this phrase appears in total.
   optional int32 count = 1;
+
+  // The number of time this phrase didn't have a space in front of it.
+  optional int32 no_space_count = 2;
 }

@@ -2,15 +2,17 @@
 #include "segmenter.h"
 
 void Segmenter::SkipWhitespace() {
+  had_space_ = false;
   while (pos_ < text_.size()) {
     if (text_[pos_] != ' ') {
       break;
     }
     pos_++;
+    had_space_ = true;
   }
 }
 
-string_view Segmenter::Next() {
+Segment Segmenter::Next() {
   // TODO(klimt): Make make this handle contractions better?
   // TODO(klimt): Segment unicode sequences better.
   int start = pos_;
@@ -35,7 +37,10 @@ string_view Segmenter::Next() {
     }
   }
   int end = pos_;
+  Segment segment;
+  segment.token = string_view(text_.data() + start, end - start);
+  segment.space_before = had_space_;
   // Skip to the next valid character.
   SkipWhitespace();
-  return string_view(text_.data() + start, end - start);
+  return segment;
 }

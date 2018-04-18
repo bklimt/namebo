@@ -11,14 +11,14 @@ TEST_F(WordCounterTest, BasicTest) {
     WordCounter wc("data/test");
 
     // ^ foo bar baz baz foo bar qux $
-    wc.Add("foo", "^", "^");
-    wc.Add("bar", "foo", "^");
-    wc.Add("baz", "bar", "foo");
-    wc.Add("baz", "baz", "bar");
-    wc.Add("foo", "baz", "baz");
-    wc.Add("bar", "foo", "baz");
-    wc.Add("qux", "bar", "foo");
-    wc.Add("$", "qux", "bar");
+    wc.Add("foo", "^", "^", false);
+    wc.Add("bar", "foo", "^", false);
+    wc.Add("baz", "bar", "foo", false);
+    wc.Add("baz", "baz", "bar", false);
+    wc.Add("foo", "baz", "baz", false);
+    wc.Add("bar", "foo", "baz", false);
+    wc.Add("qux", "bar", "foo", false);
+    wc.Add("$", "qux", "bar", false);
 
     // Test the total counts.
     EXPECT_EQ(8, wc.GetTotalCount());
