@@ -50,8 +50,6 @@ TEST_F(WordCounterTest, BasicTest) {
     EXPECT_EQ(1, wc.GetCount("bar", "foo", "baz"));
     EXPECT_EQ(1, wc.GetCount("qux", "bar", "foo"));
     EXPECT_EQ(1, wc.GetCount("$", "qux", "bar"));
-
-    wc.GetNext("bar", "foo", 0.2, 0.4, 0.4);
   }
   {
     WordCounter wc("data/test");

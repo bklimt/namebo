@@ -24,7 +24,8 @@ int main(int argc, char **argv) {
   std::string prev1 = "^";
   std::string prev2 = "^";
   while (true) {
-    std::string word = wc.GetNext(prev1, prev2, 0.3, 0.3, 0.3);
+    bool space_before;
+    std::string word = wc.GetNext(prev1, prev2, 0.1, 0.3, 0.6, &space_before);
     prev2 = prev1;
     prev1 = word;
     ++word_count;
@@ -34,7 +35,7 @@ int main(int argc, char **argv) {
       break;
     }
 
-    printf("%s", word.c_str());
+    printf("%s%s", space_before ? " " : "", word.c_str());
     LOG(INFO) << word;
   }
 

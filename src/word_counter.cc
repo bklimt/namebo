@@ -165,7 +165,7 @@ bool HasPrefix(leveldb::Slice s, leveldb::Slice pre) {
 
 std::string WordCounter::GetNext(string_view prev1, string_view prev2,
                                  double unigram_weight, double bigram_weight,
-                                 double trigram_weight) {
+                                 double trigram_weight, bool *space_before) {
   // HACK: This isn't really right. We should fix the counts for ^.
   // If the previous words were "^", then don't use their weights.
   if (prev1 == "^") {
@@ -236,9 +236,8 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
     if (n < 0) {
       std::string word = it->key().ToString();
       // TODO(klimt): Make this random?
-      if (unigram_data.no_space_count() <= unigram_data.count() / 2) {
-        word = std::string(" ") + word;
-      }
+      *space_before =
+          (unigram_data.no_space_count() <= unigram_data.count() / 2);
 
       LOG(INFO) << "word: " << word;
       LOG(INFO) << "bigram prefix: " << KEY(prev1);
