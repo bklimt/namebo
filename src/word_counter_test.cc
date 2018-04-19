@@ -11,6 +11,8 @@ TEST_F(WordCounterTest, BasicTest) {
     WordCounter wc("data/test");
 
     // ^ foo bar baz baz foo bar qux $
+    wc.Add("^", false);
+    wc.Add("^", "^", false);
     wc.Add("foo", "^", "^", false);
     wc.Add("bar", "foo", "^", false);
     wc.Add("baz", "bar", "foo", false);
@@ -21,11 +23,11 @@ TEST_F(WordCounterTest, BasicTest) {
     wc.Add("$", "qux", "bar", false);
 
     // Test the total counts.
-    EXPECT_EQ(8, wc.GetTotalCount());
+    EXPECT_EQ(10, wc.GetTotalCount());
     EXPECT_EQ(2, wc.GetSingletonCount());
 
     // Test the unigram counts.
-    EXPECT_EQ(0, wc.GetCount("^"));
+    EXPECT_EQ(2, wc.GetCount("^"));
     EXPECT_EQ(2, wc.GetCount("foo"));
     EXPECT_EQ(2, wc.GetCount("bar"));
     EXPECT_EQ(2, wc.GetCount("baz"));
@@ -55,11 +57,11 @@ TEST_F(WordCounterTest, BasicTest) {
     WordCounter wc("data/test");
 
     // Test the total counts.
-    EXPECT_EQ(8, wc.GetTotalCount());
+    EXPECT_EQ(10, wc.GetTotalCount());
     EXPECT_EQ(2, wc.GetSingletonCount());
 
     // Test the unigram counts.
-    EXPECT_EQ(0, wc.GetCount("^"));
+    EXPECT_EQ(2, wc.GetCount("^"));
     EXPECT_EQ(2, wc.GetCount("foo"));
     EXPECT_EQ(2, wc.GetCount("bar"));
     EXPECT_EQ(2, wc.GetCount("baz"));

@@ -16,6 +16,8 @@ class WordCounter {
   ~WordCounter() { Flush(); }
 
   void Flush();
+  void Add(string_view word, bool space_before);
+  void Add(string_view word, string_view prev1, bool space_before);
   void Add(string_view word, string_view prev1, string_view prev2,
            bool space_before);
 

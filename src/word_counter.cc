@@ -98,8 +98,7 @@ void WordCounter::SetPhraseData(leveldb::DB *db, string_view phrase,
   CHECK(status.ok()) << "Unable to write " << phrase << " to leveldb.";
 }
 
-void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
-                      bool space_before) {
+void WordCounter::Add(string_view word, bool space_before) {
   // Update unigram entry for word.
   std::string unigram = KEY(word).ToString();
   PhraseData unigram_data = GetPhraseData(unigrams_.get(), unigram);
@@ -109,18 +108,7 @@ void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
   }
   SetPhraseData(unigrams_.get(), unigram, unigram_data);
 
-  // Update the bigram entry for "prev1 word".
-  std::string bigram = KEY(prev1, word);
-  PhraseData bigram_data = GetPhraseData(bigrams_.get(), bigram);
-  bigram_data.set_count(bigram_data.count() + 1);
-  SetPhraseData(bigrams_.get(), bigram, bigram_data);
-
-  // Update the trigram entry for "prev2 prev1 word".
-  std::string trigram = KEY(prev2, prev1, word);
-  PhraseData trigram_data = GetPhraseData(trigrams_.get(), trigram);
-  trigram_data.set_count(trigram_data.count() + 1);
-  SetPhraseData(trigrams_.get(), trigram, trigram_data);
-
+  // TODO(klimt): Figure out how to not include ^ in unigrams.
   // Update the global data.
   global_.set_total_count(global_.total_count() + 1);
   if (unigram_data.count() == 1) {
@@ -133,6 +121,27 @@ void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
   if (global_unsynced_ > 1000) {
     Flush();
   }
+}
+
+void WordCounter::Add(string_view word, string_view prev1, bool space_before) {
+  Add(word, space_before);
+
+  // Update the bigram entry for "prev1 word".
+  std::string bigram = KEY(prev1, word);
+  PhraseData bigram_data = GetPhraseData(bigrams_.get(), bigram);
+  bigram_data.set_count(bigram_data.count() + 1);
+  SetPhraseData(bigrams_.get(), bigram, bigram_data);
+}
+
+void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
+                      bool space_before) {
+  Add(word, prev1, space_before);
+
+  // Update the trigram entry for "prev2 prev1 word".
+  std::string trigram = KEY(prev2, prev1, word);
+  PhraseData trigram_data = GetPhraseData(trigrams_.get(), trigram);
+  trigram_data.set_count(trigram_data.count() + 1);
+  SetPhraseData(trigrams_.get(), trigram, trigram_data);
 }
 
 int Compare(leveldb::Slice s1, leveldb::Slice s2) {
