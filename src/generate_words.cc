@@ -8,6 +8,9 @@
 #include "word_counter.h"
 
 DEFINE_string(input, "", "leveldb to read words from");
+DEFINE_double(unigram_weight, 0.1, "unigram weight");
+DEFINE_double(bigram_weight, 0.3, "bigram weight");
+DEFINE_double(trigram_weight, 0.6, "trigram weight");
 
 int main(int argc, char **argv) {
   srand(time(NULL));
@@ -25,7 +28,9 @@ int main(int argc, char **argv) {
   std::string prev2 = "^";
   while (true) {
     bool space_before;
-    std::string word = wc.GetNext(prev1, prev2, 0.1, 0.3, 0.6, &space_before);
+    std::string word =
+        wc.GetNext(prev1, prev2, FLAGS_unigram_weight, FLAGS_bigram_weight,
+                   FLAGS_trigram_weight, &space_before);
     prev2 = prev1;
     prev1 = word;
     ++word_count;
