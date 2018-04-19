@@ -108,9 +108,12 @@ void WordCounter::Add(string_view word, bool space_before) {
   }
   SetPhraseData(unigrams_.get(), unigram, unigram_data);
 
-  // TODO(klimt): Figure out how to not include ^ in unigrams.
   // Update the global data.
   global_.set_total_count(global_.total_count() + 1);
+  if (word != "^") {
+    global_.set_total_count_without_caret(global_.total_count_without_caret() +
+                                          1);
+  }
   if (unigram_data.count() == 1) {
     global_.set_singleton_count(global_.singleton_count() + 1);
   } else if (unigram_data.count() == 2) {

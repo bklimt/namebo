@@ -23,6 +23,7 @@ TEST_F(WordCounterTest, BasicTest) {
     wc.Add("$", "qux", "bar", false);
 
     // Test the total counts.
+    EXPECT_EQ(8, wc.GetTotalCountWithoutCaret());
     EXPECT_EQ(10, wc.GetTotalCount());
     EXPECT_EQ(2, wc.GetSingletonCount());
 
@@ -57,6 +58,7 @@ TEST_F(WordCounterTest, BasicTest) {
     WordCounter wc("data/test");
 
     // Test the total counts.
+    EXPECT_EQ(8, wc.GetTotalCountWithoutCaret());
     EXPECT_EQ(10, wc.GetTotalCount());
     EXPECT_EQ(2, wc.GetSingletonCount());
 

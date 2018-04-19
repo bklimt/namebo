@@ -26,6 +26,9 @@ class WordCounter {
                       double unigram_weight, double bigram_weight,
                       double trigram_weight, bool *space_before);
 
+  int32_t GetTotalCountWithoutCaret() {
+    return global_.total_count_without_caret();
+  }
   int32_t GetTotalCount() { return global_.total_count(); }
   int32_t GetSingletonCount() { return global_.singleton_count(); }
 

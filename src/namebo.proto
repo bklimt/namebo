@@ -16,6 +16,9 @@ message GlobalData {
 
   // The total number of occurrences in the text.
   optional int32 total_count = 2;
+
+  // The total number of occurrences in the text except for ^.
+  optional int32 total_count_without_caret = 3;
 }
 
 message PhraseData {
