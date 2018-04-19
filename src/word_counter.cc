@@ -178,16 +178,8 @@ bool HasPrefix(leveldb::Slice s, leveldb::Slice pre) {
 std::string WordCounter::GetNext(string_view prev1, string_view prev2,
                                  double unigram_weight, double bigram_weight,
                                  double trigram_weight, bool *space_before) {
-  // HACK: This isn't really right. We should fix the counts for ^.
-  // If the previous words were "^", then don't use their weights.
-  if (prev1 == "^") {
-    unigram_weight = 1.0;
-    bigram_weight = 0.0;
-    trigram_weight = 0.0;
-  }
-
   // Get the global data.
-  int32_t total_count = global_.total_count();
+  int32_t total_count = global_.total_count_without_caret();
   int32_t singleton_count = global_.singleton_count();
   double singleton_p = static_cast<double>(singleton_count) / total_count;
   LOG(INFO) << "singleton p = " << singleton_p;
@@ -243,6 +235,11 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
     double p = (unigram_weight * unigram_p + bigram_weight * bigram_p +
                 trigram_weight * trigram_p) /
                (unigram_weight + bigram_weight + trigram_weight);
+
+    // TODO(klimt): This doesn't seem right. Try to skip this completely.
+    if (it->key() == "^") {
+      unigram_p = 0.0;
+    }
 
     n -= p;
     if (n < 0) {
