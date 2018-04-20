@@ -321,7 +321,7 @@ find_libs(targets, sysdeps)
 find_bins(targets, sysdeps)
 
 # Print out the default rule with all binaries.
-bins = ['bin/' + targets[t].name for t in targets if targets[t].default]
+bins = ['bin/' + targets[t].name for t in sorted(targets) if targets[t].default]
 bins = ' '.join(bins)
 print('all:', bins)
 

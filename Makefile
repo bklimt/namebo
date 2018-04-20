@@ -1,4 +1,4 @@
-all: bin/count_words bin/convert bin/count bin/dump bin/generate bin/word_counter_test bin/generate_words bin/segmenter_test
+all: bin/convert bin/count bin/count_words bin/dump bin/generate bin/generate_words bin/segmenter_test bin/word_counter_test
 
 clean:
 	rm -rf bin || true
