@@ -338,5 +338,5 @@ format:
 """)
 
 # Print out each target.
-for target in targets:
+for target in sorted(targets):
   print(targets[target].make())
