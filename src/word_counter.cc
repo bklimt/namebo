@@ -76,6 +76,16 @@ int32_t WordCounter::GetCount(string_view word, string_view prev1,
   return data.count();
 }
 
+int32_t WordCounter::GetPrefixCount(string_view word) {
+  PhraseData data = GetPhraseData(unigrams_.get(), KEY(word));
+  return data.prefix_count();
+}
+
+int32_t WordCounter::GetPrefixCount(string_view word, string_view prev1) {
+  PhraseData data = GetPhraseData(bigrams_.get(), KEY(prev1, word));
+  return data.prefix_count();
+}
+
 PhraseData WordCounter::GetPhraseData(leveldb::DB *db, string_view phrase) {
   PhraseData data;
   std::string str;
@@ -98,88 +108,42 @@ void WordCounter::SetPhraseData(leveldb::DB *db, string_view phrase,
   CHECK(status.ok()) << "Unable to write " << phrase << " to leveldb.";
 }
 
-void WordCounter::Add(string_view word, bool space_before) {
+#define INCREMENT(table, key, field)                      \
+  do {                                                    \
+    PhraseData data = GetPhraseData(table##_.get(), key); \
+    data.set_##field(data.field() + 1);                   \
+    SetPhraseData(table##_.get(), key, data);             \
+  } while (0)
+
+void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
+                      bool space_before) {
+  INCREMENT(trigrams, KEY(prev2, prev1, word), count);
+  INCREMENT(bigrams, KEY(prev2, prev1), prefix_count);
+
+  INCREMENT(bigrams, KEY(prev1, word), count);
+  INCREMENT(unigrams, KEY(prev1), prefix_count);
+
   // Update unigram entry for word.
-  std::string unigram = KEY(word).ToString();
-  PhraseData unigram_data = GetPhraseData(unigrams_.get(), unigram);
-  unigram_data.set_count(unigram_data.count() + 1);
+  std::string key = KEY(word).ToString();
+  INCREMENT(unigrams, key, count);
   if (!space_before) {
-    unigram_data.set_no_space_count(unigram_data.no_space_count() + 1);
+    INCREMENT(unigrams, key, no_space_count);
   }
-  SetPhraseData(unigrams_.get(), unigram, unigram_data);
 
   // Update the global data.
   global_.set_total_count(global_.total_count() + 1);
-  if (word != "^") {
-    global_.set_total_count_without_caret(global_.total_count_without_caret() +
-                                          1);
-  }
-  if (unigram_data.count() == 1) {
-    global_.set_singleton_count(global_.singleton_count() + 1);
-  } else if (unigram_data.count() == 2) {
-    global_.set_singleton_count(global_.singleton_count() - 1);
-  }
-
+  // TODO(klimt): Count up the singletons in a final pass.
   global_unsynced_++;
   if (global_unsynced_ > 1000) {
     Flush();
   }
 }
 
-void WordCounter::Add(string_view word, string_view prev1, bool space_before) {
-  Add(word, space_before);
-
-  // Update the bigram entry for "prev1 word".
-  std::string bigram = KEY(prev1, word);
-  PhraseData bigram_data = GetPhraseData(bigrams_.get(), bigram);
-  bigram_data.set_count(bigram_data.count() + 1);
-  SetPhraseData(bigrams_.get(), bigram, bigram_data);
-}
-
-void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
-                      bool space_before) {
-  Add(word, prev1, space_before);
-
-  // Update the trigram entry for "prev2 prev1 word".
-  std::string trigram = KEY(prev2, prev1, word);
-  PhraseData trigram_data = GetPhraseData(trigrams_.get(), trigram);
-  trigram_data.set_count(trigram_data.count() + 1);
-  SetPhraseData(trigrams_.get(), trigram, trigram_data);
-}
-
-int Compare(leveldb::Slice s1, leveldb::Slice s2) {
-  int min_len = std::min(s1.size(), s2.size());
-  int cmp = memcmp(s1.data(), s2.data(), min_len);
-  if (cmp) {
-    return cmp;
-  }
-  if (s1.size() < s2.size()) {
-    return -1;
-  }
-  if (s1.size() > s2.size()) {
-    return 1;
-  }
-  return 0;
-}
-
-bool Less(leveldb::Slice s1, leveldb::Slice s2) { return Compare(s1, s2) < 0; }
-
-bool Equal(leveldb::Slice s1, leveldb::Slice s2) {
-  return Compare(s1, s2) == 0;
-}
-
-bool HasPrefix(leveldb::Slice s, leveldb::Slice pre) {
-  if (s.size() < pre.size()) {
-    return false;
-  }
-  return memcmp(s.data(), pre.data(), std::min(s.size(), pre.size())) == 0;
-}
-
 std::string WordCounter::GetNext(string_view prev1, string_view prev2,
                                  double unigram_weight, double bigram_weight,
                                  double trigram_weight, bool *space_before) {
   // Get the global data.
-  int32_t total_count = global_.total_count_without_caret();
+  int32_t total_count = global_.total_count();
   int32_t singleton_count = global_.singleton_count();
   double singleton_p = static_cast<double>(singleton_count) / total_count;
   LOG(INFO) << "singleton p = " << singleton_p;
@@ -227,19 +191,14 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
     double bigram_p = (bigram_prefix_data.count() == 0)
                           ? 0.0
                           : static_cast<double>(bigram_data.count()) /
-                                bigram_prefix_data.count();
+                                bigram_prefix_data.prefix_count();
     double trigram_p = (trigram_prefix_data.count() == 0)
                            ? 0.0
                            : static_cast<double>(trigram_data.count()) /
-                                 trigram_prefix_data.count();
+                                 trigram_prefix_data.prefix_count();
     double p = (unigram_weight * unigram_p + bigram_weight * bigram_p +
                 trigram_weight * trigram_p) /
                (unigram_weight + bigram_weight + trigram_weight);
-
-    // TODO(klimt): This doesn't seem right. Try to skip this completely.
-    if (it->key() == "^") {
-      unigram_p = 0.0;
-    }
 
     n -= p;
     if (n < 0) {

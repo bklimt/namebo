@@ -17,8 +17,8 @@ message GlobalData {
   // The total number of occurrences in the text.
   optional int32 total_count = 2;
 
-  // The total number of occurrences in the text except for ^.
-  optional int32 total_count_without_caret = 3;
+  // The total number of occurrences in the text as a prefix.
+  optional int32 prefix_count = 3;
 }
 
 message PhraseData {
@@ -27,4 +27,7 @@ message PhraseData {
 
   // The number of time this phrase didn't have a space in front of it.
   optional int32 no_space_count = 2;
+
+  // The total number of occurrences in the text as a prefix.
+  optional int32 prefix_count = 3;
 }
