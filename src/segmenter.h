@@ -11,13 +11,17 @@ struct Segment {
 
 class Segmenter {
  public:
-  Segmenter(std::string &&text) : pos_(0), text_(text) { SkipWhitespace(); }
+  Segmenter(std::string &&text) : pos_(0), text_(text) {
+    Canonicalize();
+    SkipWhitespace();
+  }
 
   bool Valid() { return pos_ < text_.size(); }
 
   Segment Next();
 
  private:
+  void Canonicalize();
   void SkipWhitespace();
 
   int pos_;

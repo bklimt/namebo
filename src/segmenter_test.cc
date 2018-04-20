@@ -53,3 +53,20 @@ TEST_F(SegmenterTest, QuoteTest) {
   EXPECT_EQ(string_view("\""), seg.Next().token);
   EXPECT_FALSE(seg.Valid());
 }
+
+TEST_F(SegmenterTest, ApostropheTest) {
+  Segmenter seg("can't stop. won\U00002019t stop.");
+  EXPECT_TRUE(seg.Valid());
+  EXPECT_EQ(string_view("can't"), seg.Next().token);
+  EXPECT_TRUE(seg.Valid());
+  EXPECT_EQ(string_view("stop"), seg.Next().token);
+  EXPECT_TRUE(seg.Valid());
+  EXPECT_EQ(string_view("."), seg.Next().token);
+  EXPECT_TRUE(seg.Valid());
+  EXPECT_EQ(string_view("won't"), seg.Next().token);
+  EXPECT_TRUE(seg.Valid());
+  EXPECT_EQ(string_view("stop"), seg.Next().token);
+  EXPECT_TRUE(seg.Valid());
+  EXPECT_EQ(string_view("."), seg.Next().token);
+  EXPECT_FALSE(seg.Valid());
+}

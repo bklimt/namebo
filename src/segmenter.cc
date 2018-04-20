@@ -1,8 +1,6 @@
 
 #include "segmenter.h"
 
-const char canonical[] = "\"\'";
-
 void Segmenter::SkipWhitespace() {
   had_space_ = false;
   while (pos_ < text_.size()) {
@@ -14,18 +12,32 @@ void Segmenter::SkipWhitespace() {
   }
 }
 
-string_view Canonicalize(string_view c) {
-  if (c == "\U0000201C" || c == "\U0000201D") {
-    return string_view(canonical, 1);
-  } else if (c == "\U00002018" || c == "\U00002019") {
-    return string_view(canonical + 1, 1);
+void Segmenter::Canonicalize() {
+  int src = 0;
+  int dest = 0;
+  while (src < text_.size()) {
+    if (src + 2 < text_.size()) {
+      if (memcmp(text_.data() + src, "\U00002018", 3) == 0 ||
+          memcmp(text_.data() + src, "\U00002019", 3) == 0) {
+        text_[dest++] = '\'';
+        src += 3;
+      } else if (memcmp(text_.data() + src, "\U0000201C", 3) == 0 ||
+                 memcmp(text_.data() + src, "\U0000201D", 3) == 0) {
+        text_[dest++] = '\"';
+        src += 3;
+      } else {
+        text_[dest++] = text_[src++];
+      }
+    } else {
+      text_[dest++] = text_[src++];
+    }
   }
-  return c;
+  if (dest < text_.size()) {
+    text_.resize(dest);
+  }
 }
 
 Segment Segmenter::Next() {
-  // TODO(klimt): Make make this handle contractions better?
-  // TODO(klimt): Segment unicode sequences better.
   int start = pos_;
   if (pos_ < text_.size() && !isalnum(text_[pos_])) {
     // It's not alphanumeric.
@@ -48,15 +60,16 @@ Segment Segmenter::Next() {
   } else {
     // It's a word made of ascii alphanumeric characters.
     while (pos_ < text_.size()) {
-      if (!isalnum(text_[pos_])) {
+      if (isalnum(text_[pos_]) || text_[pos_] == '\'') {
+        pos_++;
+      } else {
         break;
       }
-      pos_++;
     }
   }
   int end = pos_;
   Segment segment;
-  segment.token = Canonicalize(string_view(text_.data() + start, end - start));
+  segment.token = string_view(text_.data() + start, end - start);
   segment.space_before = had_space_;
   // Skip to the next valid character.
   SkipWhitespace();
