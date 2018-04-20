@@ -139,6 +139,26 @@ void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
   }
 }
 
+void WordCounter::CountSingletons() {
+  // Iterate over all terms.
+  int singletons = 0;
+  std::unique_ptr<leveldb::Iterator> it(
+      unigrams_->NewIterator(leveldb::ReadOptions()));
+  for (it->SeekToFirst(); it->Valid(); it->Next()) {
+    // TODO(klimt): Is it possible to parse protos without copying?
+    PhraseData unigram_data;
+    leveldb::Slice bytes = it->value();
+    CHECK(unigram_data.ParseFromString(bytes.ToString()))
+        << "Unable to parse data for " << it->key();
+
+    if (unigram_data.count() == 1) {
+      ++singletons;
+    }
+  }
+  global_.set_singleton_count(singletons);
+  global_unsynced_++;
+}
+
 std::string WordCounter::GetNext(string_view prev1, string_view prev2,
                                  double unigram_weight, double bigram_weight,
                                  double trigram_weight, bool *space_before) {

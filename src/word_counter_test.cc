@@ -22,6 +22,9 @@ TEST_F(WordCounterTest, BasicTest) {
 
     // Test the total counts.
     EXPECT_EQ(8, wc.GetTotalCount());
+    EXPECT_EQ(0, wc.GetSingletonCount());
+    wc.CountSingletons();
+    EXPECT_EQ(2, wc.GetSingletonCount());
 
     // Test the unigram counts.
     EXPECT_EQ(0, wc.GetCount("^"));
@@ -69,6 +72,7 @@ TEST_F(WordCounterTest, BasicTest) {
 
     // Test the total counts.
     EXPECT_EQ(8, wc.GetTotalCount());
+    EXPECT_EQ(2, wc.GetSingletonCount());
 
     // Test the unigram counts.
     EXPECT_EQ(0, wc.GetCount("^"));

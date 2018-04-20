@@ -33,6 +33,9 @@ class WordCounter {
   int32_t GetPrefixCount(string_view word);
   int32_t GetPrefixCount(string_view word, string_view prev1);
 
+  // Counts the number of terms that occur exactly once.
+  void CountSingletons();
+
  private:
   PhraseData GetPhraseData(leveldb::DB *db, string_view phrase);
   void SetPhraseData(leveldb::DB *db, string_view phrase,
