@@ -313,8 +313,6 @@ sysdeps = {
 # Makefile generation
 #
 
-# TODO(klimt): Put bins in there.
-
 targets = {}
 find_protos(targets)
 find_libs(targets, sysdeps)
