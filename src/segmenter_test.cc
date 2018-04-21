@@ -5,68 +5,62 @@
 
 struct SegmenterTest : testing::Test {};
 
-// TODO(klimt): Add some space tests.
+void TestCase(const char *input, Segment expected[], int n) {
+  Segmenter seg(input);
+  for (int i = 0; i < n; ++i) {
+    EXPECT_TRUE(seg.Valid());
+    Segment s = seg.Next();
+    EXPECT_EQ(string_view(expected[i].token), s.token);
+    EXPECT_EQ(expected[i].space_before, s.space_before);
+  }
+  EXPECT_FALSE(seg.Valid());
+}
 
 TEST_F(SegmenterTest, BasicTest) {
-  Segmenter seg("  foo bar \xF0\x9F\x92\xA9 \U0001F4A9\U0001F4A9baz.qux?   ");
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("foo"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("bar"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\U0001F4A9"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\U0001F4A9"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\U0001F4A9"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("baz"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("."), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("qux"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("?"), seg.Next().token);
-  EXPECT_FALSE(seg.Valid());
+  Segment expected[] = {
+      {"foo", "foo", true},
+      {"bar", "bar", true},
+      {"\U0001F4A9", "\U0001F4A9", true},
+      {"\U0001F4A9", "\U0001F4A9", true},
+      {"\U0001F4A9", "\U0001F4A9", false},
+      {"baz", "baz", false},
+      {".", ".", false},
+      {"qux", "qux", false},
+      {"?", "?", false},
+  };
+  TestCase("  foo bar \xF0\x9F\x92\xA9 \U0001F4A9\U0001F4A9baz.qux?   ",
+           expected, 9);
+}
+
+TEST_F(SegmenterTest, AlphaTest) {
+  Segment expected[] = {
+      {"Foo", "foo", false}, {"BaR", "bar", true},
+  };
+  TestCase("Foo BaR", expected, 2);
 }
 
 TEST_F(SegmenterTest, UnicodeTest) {
-  Segmenter seg("\xF0\x9F\x92\xA9\U0001F4A9\U0001F4A9");
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\U0001F4A9"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\U0001F4A9"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\U0001F4A9"), seg.Next().token);
-  EXPECT_FALSE(seg.Valid());
+  Segment expected[] = {
+      {"\U0001F4A9", "\U0001F4A9", false},
+      {"\U0001F4A9", "\U0001F4A9", false},
+      {"\U0001F4A9", "\U0001F4A9", false},
+  };
+  TestCase("\xF0\x9F\x92\xA9\U0001F4A9\U0001F4A9", expected, 3);
 }
 
 TEST_F(SegmenterTest, QuoteTest) {
-  Segmenter seg("\U0000201C\U00002018\U00002019\U0000201D");
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\""), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\'"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\'"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("\""), seg.Next().token);
-  EXPECT_FALSE(seg.Valid());
+  Segment expected[]{
+      {"\"", "\"", false},
+      {"'", "'", false},
+      {"'", "'", false},
+      {"\"", "\"", false},
+  };
+  TestCase("\U0000201C\U00002018\U00002019\U0000201D", expected, 4);
 }
 
 TEST_F(SegmenterTest, ApostropheTest) {
-  Segmenter seg("can't stop. won\U00002019t stop.");
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("can't"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("stop"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("."), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("won't"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("stop"), seg.Next().token);
-  EXPECT_TRUE(seg.Valid());
-  EXPECT_EQ(string_view("."), seg.Next().token);
-  EXPECT_FALSE(seg.Valid());
+  Segment expected[] = {{"can't", "can't", false}, {"stop", "stop", true},
+                        {".", ".", false},         {"won't", "won't", true},
+                        {"stop", "stop", true},    {".", ".", false}};
+  TestCase("can't stop. won\U00002019t stop.", expected, 6);
 }

@@ -6,15 +6,13 @@
 
 struct Segment {
   string_view token;
+  std::string normalized_token;
   bool space_before;
 };
 
 class Segmenter {
  public:
-  Segmenter(std::string &&text) : pos_(0), text_(text) {
-    Canonicalize();
-    SkipWhitespace();
-  }
+  Segmenter(std::string &&text);
 
   bool Valid() { return pos_ < text_.size(); }
 

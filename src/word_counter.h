@@ -10,14 +10,15 @@
 #include "namebo.pb.h"
 #include "string_view.h"
 
+class Segment;
+
 class WordCounter {
  public:
   WordCounter(const std::string &path);
   ~WordCounter() { Flush(); }
 
   void Flush();
-  void Add(string_view word, string_view prev1, string_view prev2,
-           bool space_before);
+  void Add(const Segment &word, string_view prev1, string_view prev2);
 
   // Randomly picks a next word based on the probabilities in the table.
   std::string GetNext(string_view prev1, string_view prev2,

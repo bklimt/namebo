@@ -1,6 +1,7 @@
 
 #include <gtest/gtest.h>
 
+#include "segmenter.h"
 #include "word_counter.h"
 
 struct WordCounterTest : testing::Test {};
@@ -11,14 +12,14 @@ TEST_F(WordCounterTest, BasicTest) {
     WordCounter wc("data/test");
 
     // ^ foo bar baz baz foo bar qux $
-    wc.Add("foo", "^", "^", false);
-    wc.Add("bar", "foo", "^", false);
-    wc.Add("baz", "bar", "foo", false);
-    wc.Add("baz", "baz", "bar", false);
-    wc.Add("foo", "baz", "baz", false);
-    wc.Add("bar", "foo", "baz", false);
-    wc.Add("qux", "bar", "foo", false);
-    wc.Add("$", "qux", "bar", false);
+    wc.Add({"foo", "foo", false}, "^", "^");
+    wc.Add({"bar", "bar", false}, "foo", "^");
+    wc.Add({"baz", "baz", false}, "bar", "foo");
+    wc.Add({"baz", "baz", false}, "baz", "bar");
+    wc.Add({"foo", "foo", false}, "baz", "baz");
+    wc.Add({"bar", "bar", false}, "foo", "baz");
+    wc.Add({"qux", "qux", false}, "bar", "foo");
+    wc.Add({"$", "$", false}, "qux", "bar");
 
     // Test the total counts.
     EXPECT_EQ(8, wc.GetTotalCount());

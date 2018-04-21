@@ -1,18 +1,13 @@
 
 #include "segmenter.h"
 
-void Segmenter::SkipWhitespace() {
-  had_space_ = false;
-  while (pos_ < text_.size()) {
-    if (text_[pos_] != ' ') {
-      break;
-    }
-    pos_++;
-    had_space_ = true;
-  }
+Segmenter::Segmenter(std::string &&text) : pos_(0), text_(text) {
+  Canonicalize();
+  SkipWhitespace();
 }
 
 void Segmenter::Canonicalize() {
+  // Replace any unicode with ascii, if possible.
   int src = 0;
   int dest = 0;
   while (src < text_.size()) {
@@ -35,6 +30,26 @@ void Segmenter::Canonicalize() {
   if (dest < text_.size()) {
     text_.resize(dest);
   }
+}
+
+void Segmenter::SkipWhitespace() {
+  had_space_ = false;
+  while (pos_ < text_.size()) {
+    if (text_[pos_] != ' ') {
+      break;
+    }
+    pos_++;
+    had_space_ = true;
+  }
+}
+
+std::string Normalize(string_view s) {
+  std::string n;
+  n.reserve(s.size());
+  for (int i = 0; i < s.size(); ++i) {
+    n[i] = tolower(s[i]);
+  }
+  return n;
 }
 
 Segment Segmenter::Next() {
@@ -70,6 +85,7 @@ Segment Segmenter::Next() {
   int end = pos_;
   Segment segment;
   segment.token = string_view(text_.data() + start, end - start);
+  segment.normalized_token = Normalize(segment.token);
   segment.space_before = had_space_;
   // Skip to the next valid character.
   SkipWhitespace();

@@ -39,14 +39,14 @@ int main(int argc, char **argv) {
       Segmenter segmenter(std::move(text));
       while (segmenter.Valid()) {
         Segment segment = segmenter.Next();
-        string_view word = segment.token;
-        wc.Add(word, prev1, prev2, segment.space_before);
+        wc.Add(segment, prev1, prev2);
         prev2 = prev1;
-        prev1 = word.ToString();
+        prev1 = segment.token.ToString();
       }
     }
     getline(in, line);
   }
+  wc.CountSingletons();
 
   return 0;
 }

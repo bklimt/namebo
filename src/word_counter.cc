@@ -8,6 +8,8 @@
 #include <fstream>
 #include <streambuf>
 
+#include "segmenter.h"
+
 #define KEY1(w1) (w1)
 #define KEY2(w1, w2) ((w1).ToString() + " " + (w2).ToString())
 #define KEY3(w1, w2, w3) \
@@ -115,18 +117,18 @@ void WordCounter::SetPhraseData(leveldb::DB *db, string_view phrase,
     SetPhraseData(table##_.get(), key, data);             \
   } while (0)
 
-void WordCounter::Add(string_view word, string_view prev1, string_view prev2,
-                      bool space_before) {
-  INCREMENT(trigrams, KEY(prev2, prev1, word), count);
+void WordCounter::Add(const Segment &word, string_view prev1,
+                      string_view prev2) {
+  INCREMENT(trigrams, KEY(prev2, prev1, word.token), count);
   INCREMENT(bigrams, KEY(prev2, prev1), prefix_count);
 
-  INCREMENT(bigrams, KEY(prev1, word), count);
+  INCREMENT(bigrams, KEY(prev1, word.token), count);
   INCREMENT(unigrams, KEY(prev1), prefix_count);
 
   // Update unigram entry for word.
-  std::string key = KEY(word).ToString();
+  std::string key = KEY(word.token).ToString();
   INCREMENT(unigrams, key, count);
-  if (!space_before) {
+  if (!word.space_before) {
     INCREMENT(unigrams, key, no_space_count);
   }
 
