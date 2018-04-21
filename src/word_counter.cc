@@ -10,15 +10,27 @@
 
 #include "segmenter.h"
 
-#define KEY1(w1) (w1)
-#define KEY2(w1, w2) ((w1).ToString() + " " + (w2).ToString())
-#define KEY3(w1, w2, w3) \
-  ((w1).ToString() + " " + (w2).ToString() + " " + (w3).ToString())
-#define GET_MACRO3(_1, _2, _3, NAME, ...) NAME
-#define KEY(...) GET_MACRO3(__VA_ARGS__, KEY3, KEY2, KEY1)(__VA_ARGS__)
+std::string ToString(const std::string& s) { return s; }
 
-leveldb::DB *OpenDBOrDie(const std::string &path) {
-  leveldb::DB *db;
+std::string ToString(const string_view& s) { return s.ToString(); }
+
+template <typename T1>
+std::string Key(const T1& s) {
+  return ToString(s);
+}
+
+template <typename T1, typename T2>
+std::string Key(const T1& s1, const T2& s2) {
+  return ToString(s1) + " " + ToString(s2);
+}
+
+template <typename T1, typename T2, typename T3>
+std::string Key(const T1& s1, const T2& s2, const T3& s3) {
+  return ToString(s1) + " " + ToString(s2) + " " + ToString(s3);
+}
+
+leveldb::DB* OpenDBOrDie(const std::string& path) {
+  leveldb::DB* db;
   leveldb::Options options;
   options.create_if_missing = true;
   leveldb::Status status = leveldb::DB::Open(options, path, &db);
@@ -26,7 +38,7 @@ leveldb::DB *OpenDBOrDie(const std::string &path) {
   return db;
 }
 
-WordCounter::WordCounter(const std::string &path) : global_unsynced_(0) {
+WordCounter::WordCounter(const std::string& path) : global_unsynced_(0) {
   global_path_ = path + "/global";
 
   // Read the global data.
@@ -63,32 +75,32 @@ void WordCounter::Flush() {
 }
 
 int32_t WordCounter::GetCount(string_view word) {
-  PhraseData data = GetPhraseData(unigrams_.get(), KEY(word));
+  PhraseData data = GetPhraseData(unigrams_.get(), Key(word));
   return data.count();
 }
 
 int32_t WordCounter::GetCount(string_view word, string_view prev1) {
-  PhraseData data = GetPhraseData(bigrams_.get(), KEY(prev1, word));
+  PhraseData data = GetPhraseData(bigrams_.get(), Key(prev1, word));
   return data.count();
 }
 
 int32_t WordCounter::GetCount(string_view word, string_view prev1,
                               string_view prev2) {
-  PhraseData data = GetPhraseData(trigrams_.get(), KEY(prev2, prev1, word));
+  PhraseData data = GetPhraseData(trigrams_.get(), Key(prev2, prev1, word));
   return data.count();
 }
 
 int32_t WordCounter::GetPrefixCount(string_view word) {
-  PhraseData data = GetPhraseData(unigrams_.get(), KEY(word));
+  PhraseData data = GetPhraseData(unigrams_.get(), Key(word));
   return data.prefix_count();
 }
 
 int32_t WordCounter::GetPrefixCount(string_view word, string_view prev1) {
-  PhraseData data = GetPhraseData(bigrams_.get(), KEY(prev1, word));
+  PhraseData data = GetPhraseData(bigrams_.get(), Key(prev1, word));
   return data.prefix_count();
 }
 
-PhraseData WordCounter::GetPhraseData(leveldb::DB *db, string_view phrase) {
+PhraseData WordCounter::GetPhraseData(leveldb::DB* db, string_view phrase) {
   PhraseData data;
   std::string str;
   leveldb::Status status = db->Get(leveldb::ReadOptions(), phrase, &str);
@@ -102,8 +114,8 @@ PhraseData WordCounter::GetPhraseData(leveldb::DB *db, string_view phrase) {
   }
 }
 
-void WordCounter::SetPhraseData(leveldb::DB *db, string_view phrase,
-                                const PhraseData &data) {
+void WordCounter::SetPhraseData(leveldb::DB* db, string_view phrase,
+                                const PhraseData& data) {
   std::string str;
   CHECK(data.SerializeToString(&str));
   leveldb::Status status = db->Put(leveldb::WriteOptions(), phrase, str);
@@ -117,16 +129,16 @@ void WordCounter::SetPhraseData(leveldb::DB *db, string_view phrase,
     SetPhraseData(table##_.get(), key, data);             \
   } while (0)
 
-void WordCounter::Add(const Segment &word, string_view prev1,
+void WordCounter::Add(const Segment& word, string_view prev1,
                       string_view prev2) {
-  INCREMENT(trigrams, KEY(prev2, prev1, word.token), count);
-  INCREMENT(bigrams, KEY(prev2, prev1), prefix_count);
+  INCREMENT(trigrams, Key(prev2, prev1, word.normalized_token), count);
+  INCREMENT(bigrams, Key(prev2, prev1), prefix_count);
 
-  INCREMENT(bigrams, KEY(prev1, word.token), count);
-  INCREMENT(unigrams, KEY(prev1), prefix_count);
+  INCREMENT(bigrams, Key(prev1, word.normalized_token), count);
+  INCREMENT(unigrams, Key(prev1), prefix_count);
 
   // Update unigram entry for word.
-  std::string key = KEY(word.token).ToString();
+  std::string key = Key(word.normalized_token);
   INCREMENT(unigrams, key, count);
   if (!word.space_before) {
     INCREMENT(unigrams, key, no_space_count);
@@ -163,7 +175,7 @@ void WordCounter::CountSingletons() {
 
 std::string WordCounter::GetNext(string_view prev1, string_view prev2,
                                  double unigram_weight, double bigram_weight,
-                                 double trigram_weight, bool *space_before) {
+                                 double trigram_weight, bool* space_before) {
   // Get the global data.
   int32_t total_count = global_.total_count();
   int32_t singleton_count = global_.singleton_count();
@@ -176,11 +188,11 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
   LOG(INFO) << "n = " << n;
 
   // Get unigram entry for "prev1".
-  PhraseData bigram_prefix_data = GetPhraseData(unigrams_.get(), KEY(prev1));
+  PhraseData bigram_prefix_data = GetPhraseData(unigrams_.get(), Key(prev1));
 
   // Get the bigram entry for "prev2 prev1".
   PhraseData trigram_prefix_data =
-      GetPhraseData(bigrams_.get(), KEY(prev2, prev1));
+      GetPhraseData(bigrams_.get(), Key(prev2, prev1));
 
   // If the trigram doesn't exist, fall back to unigram and bigram data.
   if (trigram_prefix_data.count() == 0) {
@@ -205,9 +217,9 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
         << "Unable to parse data for " << it->key();
 
     PhraseData bigram_data =
-        GetPhraseData(bigrams_.get(), KEY(prev1, it->key()));
+        GetPhraseData(bigrams_.get(), Key(prev1, it->key()));
     PhraseData trigram_data =
-        GetPhraseData(trigrams_.get(), KEY(prev2, prev1, it->key()));
+        GetPhraseData(trigrams_.get(), Key(prev2, prev1, it->key()));
 
     double unigram_p = static_cast<double>(unigram_data.count()) / total_count;
     double bigram_p = (bigram_prefix_data.count() == 0)
@@ -230,8 +242,8 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
           (unigram_data.no_space_count() <= unigram_data.count() / 2);
 
       LOG(INFO) << "word: " << word;
-      LOG(INFO) << "bigram prefix: " << KEY(prev1);
-      LOG(INFO) << "trigram prefix: " << KEY(prev2, prev1);
+      LOG(INFO) << "bigram prefix: " << Key(prev1);
+      LOG(INFO) << "trigram prefix: " << Key(prev2, prev1);
       LOG(INFO) << "unigram prob: " << unigram_data.count() << " / "
                 << total_count;
       LOG(INFO) << " bigram prob: " << bigram_data.count() << " / "

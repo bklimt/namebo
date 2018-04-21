@@ -12,8 +12,8 @@ TEST_F(WordCounterTest, BasicTest) {
     WordCounter wc("data/test");
 
     // ^ foo bar baz baz foo bar qux $
-    wc.Add({"foo", "foo", false}, "^", "^");
-    wc.Add({"bar", "bar", false}, "foo", "^");
+    wc.Add({"Foo", "foo", false}, "^", "^");
+    wc.Add({"BAR", "bar", false}, "foo", "^");
     wc.Add({"baz", "baz", false}, "bar", "foo");
     wc.Add({"baz", "baz", false}, "baz", "bar");
     wc.Add({"foo", "foo", false}, "baz", "baz");
