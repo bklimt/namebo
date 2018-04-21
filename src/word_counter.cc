@@ -178,9 +178,9 @@ void WordCounter::CountSingletons() {
   global_unsynced_++;
 }
 
-std::string WordCounter::GetNext(string_view prev1, string_view prev2,
-                                 double unigram_weight, double bigram_weight,
-                                 double trigram_weight, bool* space_before) {
+Segment WordCounter::GetNext(string_view prev1, string_view prev2,
+                             double unigram_weight, double bigram_weight,
+                             double trigram_weight) {
   // Get the global data.
   int32_t total_count = global_.total_count();
   int32_t singleton_count = global_.singleton_count();
@@ -236,7 +236,7 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
     double p = (unigram_weight * unigram_p + bigram_weight * bigram_p +
                 trigram_weight * trigram_p) /
                (unigram_weight + bigram_weight + trigram_weight);
-      
+
     if (isnan(p)) {
       LOG(ERROR) << "Found a NaN probability.";
       LOG(ERROR) << it->key();
@@ -248,9 +248,14 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
 
     n -= p;
     if (n < 0) {
+      Segment segment;
       std::string word = it->key().ToString();
+      // TODO(klimt): Choose a capitalized version.
+      segment.buffer = word;
+      segment.token = segment.buffer;
+      segment.normalized_token = word;
       // TODO(klimt): Make this random?
-      *space_before =
+      segment.space_before =
           (unigram_data.no_space_count() <= unigram_data.count() / 2);
 
       LOG(INFO) << "word: " << word;
@@ -264,7 +269,7 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
                 << trigram_prefix_data.count();
       LOG(INFO) << "p = " << p;
 
-      return word;
+      return segment;
     }
   }
   CHECK(it->status().ok()) << "Unable to iterate over unigrams.";

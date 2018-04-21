@@ -8,6 +8,9 @@ struct Segment {
   string_view token;
   std::string normalized_token;
   bool space_before;
+
+  // Some space to use for the backing store of token, if needed.
+  std::string buffer;
 };
 
 class Segmenter {

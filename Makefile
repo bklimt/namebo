@@ -40,10 +40,10 @@ bin/generate: obj/generate.o obj/namebo.o
 obj/generate.o: ./src/generate.cc gen/namebo.pb.h
 	mkdir -p obj && g++ -g -std=c++11 -Igen -o $@ -c ./src/generate.cc
 
-bin/generate_words: obj/generate_words.o obj/word_counter.o obj/string_view.o obj/segmenter.o obj/string_view.o obj/namebo.o
-	mkdir -p bin && g++ -g -o $@ $^ -lleveldb -lleveldb -lprotobuf -lleveldb -lleveldb -lglog -lleveldb -lgflags -lglog
+bin/generate_words: obj/generate_words.o obj/segmenter.o obj/string_view.o obj/word_counter.o obj/string_view.o obj/segmenter.o obj/string_view.o obj/namebo.o
+	mkdir -p bin && g++ -g -o $@ $^ -lleveldb -lleveldb -lleveldb -lprotobuf -lleveldb -lleveldb -lglog -lleveldb -lgflags -lglog
 
-obj/generate_words.o: ./src/generate_words.cc ./src/word_counter.h ./src/string_view.h ./src/segmenter.h ./src/string_view.h gen/namebo.pb.h
+obj/generate_words.o: ./src/generate_words.cc ./src/segmenter.h ./src/string_view.h ./src/word_counter.h ./src/string_view.h ./src/segmenter.h ./src/string_view.h gen/namebo.pb.h
 	mkdir -p obj && g++ -g -std=c++11 -Igen -o $@ -c ./src/generate_words.cc
 
 obj/namebo.o: gen/namebo.pb.cc gen/namebo.pb.h

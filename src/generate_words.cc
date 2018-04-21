@@ -5,6 +5,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "segmenter.h"
 #include "word_counter.h"
 
 DEFINE_string(input, "", "leveldb to read words from");
@@ -27,21 +28,18 @@ int main(int argc, char **argv) {
   std::string prev1 = "^";
   std::string prev2 = "^";
   while (true) {
-    bool space_before;
-    std::string word =
-        wc.GetNext(prev1, prev2, FLAGS_unigram_weight, FLAGS_bigram_weight,
-                   FLAGS_trigram_weight, &space_before);
+    Segment segment = wc.GetNext(prev1, prev2, FLAGS_unigram_weight,
+                                 FLAGS_bigram_weight, FLAGS_trigram_weight);
     prev2 = prev1;
-    prev1 = word;
+    prev1 = segment.normalized_token;
     ++word_count;
 
-    if (word == "$" || word_count > 200) {
+    if (segment.normalized_token == "$" || word_count > 200) {
       printf("\n");
       break;
     }
 
-    printf("%s%s", space_before ? " " : "", word.c_str());
-    LOG(INFO) << word;
+    printf("%s%s", segment.space_before ? " " : "", segment.token.data());
   }
 
   return 0;

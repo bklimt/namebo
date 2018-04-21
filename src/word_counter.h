@@ -21,9 +21,8 @@ class WordCounter {
   void Add(const Segment &word, string_view prev1, string_view prev2);
 
   // Randomly picks a next word based on the probabilities in the table.
-  std::string GetNext(string_view prev1, string_view prev2,
-                      double unigram_weight, double bigram_weight,
-                      double trigram_weight, bool *space_before);
+  Segment GetNext(string_view prev1, string_view prev2, double unigram_weight,
+                  double bigram_weight, double trigram_weight);
 
   int32_t GetTotalCount() { return global_.total_count(); }
   int32_t GetSingletonCount() { return global_.singleton_count(); }
