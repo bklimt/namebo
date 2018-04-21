@@ -17,8 +17,8 @@ message GlobalData {
   // The total number of occurrences in the text.
   optional int32 total_count = 2;
 
-  // The total number of occurrences in the text as a prefix.
-  optional int32 prefix_count = 3;
+  // The unique number of unigrams in the text.
+  optional int32 unique_count = 3;
 }
 
 message PhraseData {

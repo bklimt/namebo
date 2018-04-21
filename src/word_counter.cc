@@ -156,6 +156,7 @@ void WordCounter::Add(const Segment& word, string_view prev1,
 void WordCounter::CountSingletons() {
   // Iterate over all terms.
   int singletons = 0;
+  int unique = 0;
   std::unique_ptr<leveldb::Iterator> it(
       unigrams_->NewIterator(leveldb::ReadOptions()));
   for (it->SeekToFirst(); it->Valid(); it->Next()) {
@@ -165,11 +166,15 @@ void WordCounter::CountSingletons() {
     CHECK(unigram_data.ParseFromString(bytes.ToString()))
         << "Unable to parse data for " << it->key();
 
+    if (unigram_data.count() > 0) {
+      ++unique;
+    }
     if (unigram_data.count() == 1) {
       ++singletons;
     }
   }
   global_.set_singleton_count(singletons);
+  global_.set_unique_count(unique);
   global_unsynced_++;
 }
 
@@ -182,8 +187,6 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
   double singleton_p = static_cast<double>(singleton_count) / total_count;
   LOG(INFO) << "singleton p = " << singleton_p;
 
-  // TODO(klimt): This is all wrong, because the probabilities for the
-  // suffixes of a novel ngram will add up to 0, not 1.
   double n = static_cast<double>(random()) / RAND_MAX;
   LOG(INFO) << "n = " << n;
 
@@ -222,17 +225,26 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
         GetPhraseData(trigrams_.get(), Key(prev2, prev1, it->key()));
 
     double unigram_p = static_cast<double>(unigram_data.count()) / total_count;
-    double bigram_p = (bigram_prefix_data.count() == 0)
+    double bigram_p = (bigram_prefix_data.prefix_count() == 0)
                           ? 0.0
                           : static_cast<double>(bigram_data.count()) /
                                 bigram_prefix_data.prefix_count();
-    double trigram_p = (trigram_prefix_data.count() == 0)
+    double trigram_p = (trigram_prefix_data.prefix_count() == 0)
                            ? 0.0
                            : static_cast<double>(trigram_data.count()) /
                                  trigram_prefix_data.prefix_count();
     double p = (unigram_weight * unigram_p + bigram_weight * bigram_p +
                 trigram_weight * trigram_p) /
                (unigram_weight + bigram_weight + trigram_weight);
+      
+    if (isnan(p)) {
+      LOG(ERROR) << "Found a NaN probability.";
+      LOG(ERROR) << it->key();
+      LOG(ERROR) << unigram_data.DebugString();
+      LOG(ERROR) << bigram_data.DebugString();
+      LOG(ERROR) << trigram_data.DebugString();
+      LOG(FATAL) << "Cannot subtract NaN probability.";
+    }
 
     n -= p;
     if (n < 0) {
@@ -257,4 +269,17 @@ std::string WordCounter::GetNext(string_view prev1, string_view prev2,
   }
   CHECK(it->status().ok()) << "Unable to iterate over unigrams.";
   LOG(FATAL) << "Reached end of unigram list with remaining n = " << n;
+}
+
+void WordCounter::PrintStats() {
+  std::cout << " Statistics" << std::endl;
+  std::cout << "============" << std::endl;
+  std::cout << global_.DebugString() << std::endl;
+  /*
+  std::cout << "unigrams: " << std::endl;
+  std::string stats;
+  CHECK(unigrams_->GetProperty("leveldb.stats", &stats)) << "Unable to read
+  stats.";
+  std::cout << stats << std::endl;
+  */
 }

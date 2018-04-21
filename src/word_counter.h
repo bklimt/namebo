@@ -27,6 +27,7 @@ class WordCounter {
 
   int32_t GetTotalCount() { return global_.total_count(); }
   int32_t GetSingletonCount() { return global_.singleton_count(); }
+  int32_t GetUniqueCount() { return global_.unique_count(); }
 
   int32_t GetCount(string_view word);
   int32_t GetCount(string_view word, string_view prev1);
@@ -36,6 +37,8 @@ class WordCounter {
 
   // Counts the number of terms that occur exactly once.
   void CountSingletons();
+
+  void PrintStats();
 
  private:
   PhraseData GetPhraseData(leveldb::DB *db, string_view phrase);

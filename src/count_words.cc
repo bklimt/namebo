@@ -41,12 +41,13 @@ int main(int argc, char **argv) {
         Segment segment = segmenter.Next();
         wc.Add(segment, prev1, prev2);
         prev2 = prev1;
-        prev1 = segment.token.ToString();
+        prev1 = segment.normalized_token;
       }
     }
     getline(in, line);
   }
   wc.CountSingletons();
+  wc.PrintStats();
 
   return 0;
 }

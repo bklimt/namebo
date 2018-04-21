@@ -11,6 +11,7 @@ void TestCase(const char *input, Segment expected[], int n) {
     EXPECT_TRUE(seg.Valid());
     Segment s = seg.Next();
     EXPECT_EQ(string_view(expected[i].token), s.token);
+    EXPECT_EQ(expected[i].normalized_token, s.normalized_token);
     EXPECT_EQ(expected[i].space_before, s.space_before);
   }
   EXPECT_FALSE(seg.Valid());

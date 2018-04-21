@@ -47,7 +47,7 @@ std::string Normalize(string_view s) {
   std::string n;
   n.reserve(s.size());
   for (int i = 0; i < s.size(); ++i) {
-    n[i] = tolower(s[i]);
+    n += static_cast<char>(tolower(s[i]));
   }
   return n;
 }
