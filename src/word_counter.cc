@@ -139,10 +139,31 @@ void WordCounter::Add(const Segment& word, string_view prev1,
 
   // Update unigram entry for word.
   std::string key = Key(word.normalized_token);
-  INCREMENT(unigrams, key, count);
+  PhraseData data = GetPhraseData(unigrams_.get(), key);
+  data.set_count(data.count() + 1);
   if (!word.space_before) {
-    INCREMENT(unigrams, key, no_space_count);
+    data.set_no_space_count(data.no_space_count() + 1);
   }
+  // Update the usages.
+  bool found = false;
+  for (int i = 0; i < data.usages_size(); ++i) {
+    if (data.usages(i).text().size() != word.token.size()) {
+      continue;
+    }
+    size_t size = word.token.size();
+    if (memcmp(data.usages(i).text().c_str(), word.token.data(), size) == 0) {
+      data.mutable_usages(i)->set_count(data.usages(i).count() + 1);
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    Usage* usage = data.add_usages();
+    usage->set_text(word.token.ToString());
+    usage->set_count(1);
+    // LOG(INFO) << "Adding usage: " << word.token.ToString();
+  }
+  SetPhraseData(unigrams_.get(), key, data);
 
   // Update the global data.
   global_.set_total_count(global_.total_count() + 1);
@@ -178,6 +199,18 @@ void WordCounter::CountSingletons() {
   global_unsynced_++;
 }
 
+const std::string& PickUsage(const PhraseData& unigram_data) {
+  double p = static_cast<double>(rand()) / RAND_MAX;
+  int n = static_cast<int>(p * unigram_data.count());
+  for (int i = 0; i < unigram_data.usages_size(); ++i) {
+    n -= unigram_data.usages(i).count();
+    if (n <= 0) {
+      return unigram_data.usages(i).text();
+    }
+  }
+  return unigram_data.usages(0).text();
+}
+
 Segment WordCounter::GetNext(string_view prev1, string_view prev2,
                              double unigram_weight, double bigram_weight,
                              double trigram_weight) {
@@ -187,7 +220,7 @@ Segment WordCounter::GetNext(string_view prev1, string_view prev2,
   double singleton_p = static_cast<double>(singleton_count) / total_count;
   LOG(INFO) << "singleton p = " << singleton_p;
 
-  double n = static_cast<double>(random()) / RAND_MAX;
+  double n = static_cast<double>(rand()) / RAND_MAX;
   LOG(INFO) << "n = " << n;
 
   // Get unigram entry for "prev1".
@@ -250,8 +283,7 @@ Segment WordCounter::GetNext(string_view prev1, string_view prev2,
     if (n < 0) {
       Segment segment;
       std::string word = it->key().ToString();
-      // TODO(klimt): Choose a capitalized version.
-      segment.buffer = word;
+      segment.buffer = PickUsage(unigram_data);
       segment.token = segment.buffer;
       segment.normalized_token = word;
       // TODO(klimt): Make this random?

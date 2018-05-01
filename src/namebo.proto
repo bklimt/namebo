@@ -1,4 +1,6 @@
 
+syntax = "proto2";
+
 message PrefixData {
   optional string prefix = 1;
   repeated SuffixData suffix = 2;
@@ -21,6 +23,14 @@ message GlobalData {
   optional int32 unique_count = 3;
 }
 
+message Usage {
+  // The literal string text.
+  optional string text = 1;
+
+  // The number of times it occurred.
+  optional int32 count = 2;
+}
+
 message PhraseData {
   // The number of times this phrase appears in total.
   optional int32 count = 1;
@@ -30,4 +40,7 @@ message PhraseData {
 
   // The total number of occurrences in the text as a prefix.
   optional int32 prefix_count = 3;
+
+  // Count of the ways this word has been used.
+  repeated Usage usages = 4;
 }
