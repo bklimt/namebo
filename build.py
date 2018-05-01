@@ -298,6 +298,7 @@ sysdeps = {
   'iostream': [],
   'map': [],
   'memory': [],
+  'random': [],
   'stdio.h': [],
   'stdlib.h': [],
   'streambuf': [],

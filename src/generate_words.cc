@@ -14,7 +14,6 @@ DEFINE_double(bigram_weight, 0.3, "bigram weight");
 DEFINE_double(trigram_weight, 0.6, "trigram weight");
 
 int main(int argc, char **argv) {
-  srand(time(NULL));
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
 
@@ -24,6 +23,7 @@ int main(int argc, char **argv) {
 
   WordCounter wc(FLAGS_input);
 
+  srand(time(NULL));
   int32_t word_count = 0;
   std::string prev1 = "^";
   std::string prev2 = "^";

@@ -5,6 +5,7 @@
 #include <leveldb/write_batch.h>
 #include <map>
 #include <memory>
+#include <random>
 #include <string>
 
 #include "namebo.pb.h"
@@ -44,6 +45,9 @@ class WordCounter {
   void SetPhraseData(leveldb::DB *db, string_view phrase,
                      const PhraseData &data);
 
+  double Random();
+  const std::string &PickUsage(const PhraseData &unigram_data);
+
  private:
   std::string global_path_;
   GlobalData global_;
@@ -52,6 +56,10 @@ class WordCounter {
   std::unique_ptr<leveldb::DB> unigrams_;
   std::unique_ptr<leveldb::DB> bigrams_;
   std::unique_ptr<leveldb::DB> trigrams_;
+
+  std::random_device rd_;
+  std::mt19937 gen_;
+  std::uniform_real_distribution<> dist_;
 };
 
 #endif  // __WORD_COUNTER_H__

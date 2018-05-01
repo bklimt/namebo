@@ -38,7 +38,10 @@ leveldb::DB* OpenDBOrDie(const std::string& path) {
   return db;
 }
 
-WordCounter::WordCounter(const std::string& path) : global_unsynced_(0) {
+double WordCounter::Random() { return dist_(gen_); }
+
+WordCounter::WordCounter(const std::string& path)
+    : global_unsynced_(0), rd_(), gen_(rd_()), dist_(0.0, 1.0) {
   global_path_ = path + "/global";
 
   // Read the global data.
@@ -137,6 +140,14 @@ void WordCounter::Add(const Segment& word, string_view prev1,
   INCREMENT(bigrams, Key(prev1, word.normalized_token), count);
   INCREMENT(unigrams, Key(prev1), prefix_count);
 
+  /*
+  if (Key(prev1) == "^") {
+    LOG(INFO) << "Prefix for " << word.normalized_token << " is ^.";
+    PhraseData to_test = GetPhraseData(unigrams_.get(), "^");
+    LOG(INFO) << "Count: " << to_test.prefix_count();
+  }
+  */
+
   // Update unigram entry for word.
   std::string key = Key(word.normalized_token);
   PhraseData data = GetPhraseData(unigrams_.get(), key);
@@ -199,9 +210,8 @@ void WordCounter::CountSingletons() {
   global_unsynced_++;
 }
 
-const std::string& PickUsage(const PhraseData& unigram_data) {
-  double p = static_cast<double>(rand()) / RAND_MAX;
-  int n = static_cast<int>(p * unigram_data.count());
+const std::string& WordCounter::PickUsage(const PhraseData& unigram_data) {
+  int n = Random() * unigram_data.count();
   for (int i = 0; i < unigram_data.usages_size(); ++i) {
     n -= unigram_data.usages(i).count();
     if (n <= 0) {
@@ -220,7 +230,7 @@ Segment WordCounter::GetNext(string_view prev1, string_view prev2,
   double singleton_p = static_cast<double>(singleton_count) / total_count;
   LOG(INFO) << "singleton p = " << singleton_p;
 
-  double n = static_cast<double>(rand()) / RAND_MAX;
+  double n = Random();
   LOG(INFO) << "n = " << n;
 
   // Get unigram entry for "prev1".
@@ -231,13 +241,13 @@ Segment WordCounter::GetNext(string_view prev1, string_view prev2,
       GetPhraseData(bigrams_.get(), Key(prev2, prev1));
 
   // If the trigram doesn't exist, fall back to unigram and bigram data.
-  if (trigram_prefix_data.count() == 0) {
+  if (trigram_prefix_data.prefix_count() == 0) {
     unigram_weight += trigram_weight / 2.0;
     bigram_weight += trigram_weight / 2.0;
     trigram_weight = 0.0;
   }
   // If the bigram doesn't exist, fall back to unigram data.
-  if (bigram_prefix_data.count() == 0) {
+  if (bigram_prefix_data.prefix_count() == 0) {
     unigram_weight += bigram_weight;
     bigram_weight = 0.0;
   }
@@ -296,9 +306,9 @@ Segment WordCounter::GetNext(string_view prev1, string_view prev2,
       LOG(INFO) << "unigram prob: " << unigram_data.count() << " / "
                 << total_count;
       LOG(INFO) << " bigram prob: " << bigram_data.count() << " / "
-                << bigram_prefix_data.count();
+                << bigram_prefix_data.prefix_count();
       LOG(INFO) << "trigram prob: " << trigram_data.count() << " / "
-                << trigram_prefix_data.count();
+                << trigram_prefix_data.prefix_count();
       LOG(INFO) << "p = " << p;
 
       return segment;
