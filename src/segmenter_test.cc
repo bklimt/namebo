@@ -35,7 +35,8 @@ TEST_F(SegmenterTest, BasicTest) {
 
 TEST_F(SegmenterTest, AlphaTest) {
   Segment expected[] = {
-      {"Foo", "foo", false}, {"BaR", "bar", true},
+      {"Foo", "foo", false},
+      {"BaR", "bar", true},
   };
   TestCase("Foo BaR", expected, 2);
 }

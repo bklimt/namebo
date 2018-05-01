@@ -2,9 +2,9 @@
 
 import os
 import os.path
+import platform
 
-# TODO(klimt): Make it work on a mac.
-macos = False
+macos = platform.system() == 'Darwin'
 
 #
 # Build meta language
@@ -37,8 +37,12 @@ class installed(syslib):
 # Go ahead and load protobuf, since we need it for proto rules.
 if macos:
   protobuf = brew(name='protobuf')
+  protoc = '$(shell brew --prefix protobuf)/bin/protoc'
+  clang = 'clang-format'
 else:
   protobuf = installed(name='protobuf')
+  protoc = 'protoc'
+  clang = 'clang-format-3.8'
 
 def all_deps(obj):
   d = []
@@ -92,7 +96,7 @@ class proto_src:
     s = 'gen/' + self.name + '.pb.cc gen/' + self.name + '.pb.h: src/' + self.name + '.proto\n'
     s = s + '\tmkdir -p gen && '
     #TODO(klimt): Put protoc here
-    s = s + 'protoc'
+    s = s + protoc
     s = s + ' --proto_path=src --cpp_out=gen $^\n'
     return s
 
@@ -271,6 +275,7 @@ if macos:
   glog = brew(name='glog')
   leveldb = brew(name='leveldb')
   gtest = brew(name='gtest')
+  gtestmain = installed('gtest_main')
   openssl = syslib(
     includes=['-I$(shell brew --prefix openssl)/include'],
     libs=['-lcrypto', '-L$(shell brew --prefix openssl)/lib'])
@@ -278,6 +283,7 @@ else:
   gflags = installed('gflags')
   glog = installed('glog')
   gtest = syslib(includes=[], libs=['-lgtest', '-lpthread', '-lgtest_main'])
+  gtestmain = syslib()
   leveldb = installed('leveldb')
   openssl = syslib()
 
@@ -303,7 +309,7 @@ sysdeps = {
   'gflags/gflags.h': [gflags],
   'glog/logging.h': [glog],
   'google/protobuf/stubs/status.h': [protobuf],
-  'gtest/gtest.h': [gtest],
+  'gtest/gtest.h': [gtest, gtestmain],
   'leveldb/db.h': [leveldb],
   'leveldb/write_batch.h': [leveldb],
   'openssl/md5.h': [openssl],
@@ -330,7 +336,7 @@ clean:
 	rm -rf gen || true
 
 format:
-	clang-format-3.8 -i src/*
+	""" + clang + """ -i src/*
 
 .PRECIOUS: obj/%.o
 """)
