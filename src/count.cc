@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
           continue;
         }
         if (seen.find(segment.normalized_token) != seen.end()) {
-          //continue;
+          // continue;
         }
         seen.insert(segment.normalized_token);
         std::cout << segment.normalized_token << std::endl;

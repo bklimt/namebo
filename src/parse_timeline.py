@@ -1,12 +1,50 @@
-#/ usr / bin / python3
+#/usr/bin/python3
 
-import datetime import io import sys import xml.etree.ElementTree
+import datetime
+import io
+import sys
+import xml.etree.ElementTree
 
-    def divs(s) : while len(s) : div = s.find('<div') if div<0 : return s = s[div : ] if s[ : 12] == '<div class="' : openq = s.find('"') + 1 s = s[openq : ] closeq = s.find('"') if closeq<0 : print('Missing close quote in class.') sys.exit(- 1) c = s[ : closeq] s = s[closeq + 1 : ] elif s[ : 5] == '<div>' : c = '' s = s[4 : ] else : print('Malformed div') print(s[ : 80]) sys.exit(- 1) if s[0] != '>' : print('Expected > after class.') sys.exit(- 1) s = s[1 : ] end = s.find('</div>') if end<0 : print('Missing close div tag.') print(s[ : 100]) sys.exit(- 1) t = s[ : end] s = s[end : ] yield(c, t)
+def divs(s):
+  while len(s):
+    div = s.find('<div')
+    if div < 0:
+      return
+    s = s[div:]
+    if s[:12] == '<div class="':
+      openq = s.find('"') + 1
+      s = s[openq:]
+      closeq = s.find('"')
+      if closeq < 0:
+        print('Missing close quote in class.')
+        sys.exit(-1)
+      c = s[:closeq]
+      s = s[closeq + 1:]
+    elif s[:5] == '<div>':
+      c = ''
+      s = s[4:]
+    else:
+      print('Malformed div')
+      print(s[:80])
+      sys.exit(-1)
+    if s[0] != '>':
+      print('Expected > after class.')
+      sys.exit(- 1)
+    s = s[1:]
+    end = s.find('</div>')
+    if end < 0:
+      print('Missing close div tag.')
+      print(s[:100])
+      sys.exit(-1)
+    t = s[:end]
+    s = s[end:]
+    yield(c, t)
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        def isdate(s) :
-#Saturday, December 9, 2017 at 7 : 43pm PST
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    fmt = '%A, %B %d, %Y at %I:%M%p %Z' try : datetime.datetime.strptime(s, fmt)
+def isdate(s) :
+  # Saturday, December 9, 2017 at 7 : 43pm PST
+  fmt = '%A, %B %d, %Y at %I:%M%p %Z'
+  try:
+    datetime.datetime.strptime(s, fmt)
     return True
   except ValueError:
     return False
@@ -66,9 +104,9 @@ def dumpposts(argv):
   good = True
   for node, parents in allnodes(parsexml(argv)):
     if 'class' in node.attrib and node.attrib['class'] == 'meta':
-#print(node.text)
-#print(node.tag, node.attrib, parents)
-#print('')
+      # print(node.text)
+      # print(node.tag, node.attrib, parents)
+      # print('')
       good = True
     elif 'class' in node.attrib and node.attrib['class'] == 'comment':
       if not good:
@@ -80,11 +118,11 @@ def dumpposts(argv):
       if node.text[0:4].lower() == '[fb]':
         continue
       print(node.text)
-#print(node.tag, node.attrib, parents)
+      # print(node.tag, node.attrib, parents)
       print('')
-    else:
-#print('strange div')
-#print('')
+     else:
+      # print('strange div')
+      # print('')
       good = False
 
 dumpposts(sys.argv)

@@ -18,6 +18,8 @@ To install dependencies on Ubuntu 16:
          libprotobuf-dev libleveldb-dev protobuf-compiler \
          libgtest-dev clang-format-3.8
 
+Build [gtest](https://www.eriksmistad.no/getting-started-with-google-test-on-ubuntu/).
+
 To build the binaries:
 
     python3 build.py >Makefile
