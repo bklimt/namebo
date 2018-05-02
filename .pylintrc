@@ -1,0 +1,7 @@
+[BASIC]
+min-public-methods=0
+
+[FORMAT]
+indent-string='  '
+max-line-length=80
+good-names=c,d,d1,d2,e,f,h,hs,i,l,n,s

@@ -2,6 +2,7 @@ bin/
 obj/
 data/
 gen/
+env/
 *.swp
 parse/config/global.json
 .vscode

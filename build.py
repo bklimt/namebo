@@ -4,45 +4,39 @@ import os
 import os.path
 import platform
 
-macos = platform.system() == 'Darwin'
+MAC_OS = platform.system() == 'Darwin'
 
 #
 # Build meta language
 #
 
-class syslib:
-  def __init__(self, includes=[], libs=[]):
-    self.includes = includes
-    self.libs = libs
+class SysLib:
+  def __init__(self, includes=None, libs=None):
+    self.includes = includes or []
+    self.libs = libs or []
     self.default = False
 
-class brew(syslib):
+class BrewLib(SysLib):
   def __init__(self, name):
     super().__init__(
-      includes = ['-I$(shell brew --prefix ' + name + ')/include'],
-      libs = ['-l' + name, '-L$(shell brew --prefix ' + name + ')/lib'])
+        includes=['-I$(shell brew --prefix ' + name + ')/include'],
+        libs=['-l' + name, '-L$(shell brew --prefix ' + name + ')/lib'])
 
-class pkg_config(syslib):
+class InstalledLib(SysLib):
   def __init__(self, name):
     super().__init__(
-      includes = ['$(pkg-config protobuf --cflags)'],
-      libs = ['$(pkg-config protobuf --libs)'])
-
-class installed(syslib):
-  def __init__(self, name):
-    super().__init__(
-      includes = [],
-      libs = ['-l' + name])
+        includes=[],
+        libs=['-l' + name])
 
 # Go ahead and load protobuf, since we need it for proto rules.
-if macos:
-  protobuf = brew(name='protobuf')
-  protoc = '$(shell brew --prefix protobuf)/bin/protoc'
-  clang = 'clang-format'
+if MAC_OS:
+  PROTOBUF = BrewLib(name='protobuf')
+  PROTOC = '$(shell brew --prefix protobuf)/bin/protoc'
+  CLANG = 'clang-format'
 else:
-  protobuf = installed(name='protobuf')
-  protoc = 'protoc'
-  clang = 'clang-format-3.8'
+  PROTOBUF = InstalledLib(name='protobuf')
+  PROTOC = 'protoc'
+  CLANG = 'clang-format-3.8'
 
 def all_deps(obj):
   d = []
@@ -53,12 +47,12 @@ def all_deps(obj):
         d.append(d2)
   return d
 
-class library:
-  def __init__(self, name, srcs=[], hdrs=[], deps=[]):
+class Library:
+  def __init__(self, name, srcs=None, hdrs=None, deps=None):
     self.name = name
-    self.srcs = srcs
-    self.hdrs = hdrs
-    self.deps = deps
+    self.srcs = srcs or []
+    self.hdrs = hdrs or []
+    self.deps = deps or []
     self.default = False
   def all_headers(self):
     hs = list(self.hdrs)
@@ -80,7 +74,7 @@ class library:
     inc = ' '.join(self.all_includes())
     if inc != '':
       inc = inc + ' '
-    s = self.obj() + ': ' 
+    s = self.obj() + ': '
     s = s + ' '.join(self.srcs) + ' '
     s = s + ' '.join(self.all_headers()) + '\n'
     s = s + '\t' + 'mkdir -p obj && g++ -g -std=c++11 '
@@ -88,27 +82,27 @@ class library:
     s = s + '-Igen -o $@ -c ' + ' '.join(self.srcs) + '\n'
     return s
 
-class proto_src:
+class ProtoSrc:
   def __init__(self, name):
     self.name = name
     self.default = False
   def make(self):
-    s = 'gen/' + self.name + '.pb.cc gen/' + self.name + '.pb.h: src/' + self.name + '.proto\n'
+    s = ('gen/' + self.name + '.pb.cc gen/' + self.name + '.pb.h: src/' +
+         self.name + '.proto\n')
     s = s + '\tmkdir -p gen && '
-    #TODO(klimt): Put protoc here
-    s = s + protoc
+    s = s + PROTOC
     s = s + ' --proto_path=src --cpp_out=gen $^\n'
     return s
 
-class proto_lib(library):
-  def __init__(self, name, deps=[]):
+class ProtoLib(Library):
+  def __init__(self, name, deps=None):
     super().__init__(
-      name = name,
-      srcs = ['gen/' + name + '.pb.cc'],
-      hdrs = ['gen/' + name + '.pb.h'],
-      deps = deps)
+        name=name,
+        srcs=['gen/' + name + '.pb.cc'],
+        hdrs=['gen/' + name + '.pb.h'],
+        deps=deps or [])
 
-class binary:
+class Binary:
   def __init__(self, name, deps):
     self.name = name
     self.deps = deps
@@ -163,12 +157,10 @@ def find_protos(targets):
       if not filename.endswith('.proto'):
         continue
       name = filename[6:-6]
-      src = proto_src(name=name)
+      src = ProtoSrc(name=name)
       targets[name + '_pb'] = src
-      targets[name + '.o'] = proto_lib(name, deps=[src, protobuf])
+      targets[name + '.o'] = ProtoLib(name, deps=[src, PROTOBUF])
 
-
-# returns True if it needs to be run again.
 def find_libs(targets, sysdeps):
   added = []
   skipped = []
@@ -181,13 +173,13 @@ def find_libs(targets, sysdeps):
       h_file = filename
       cc_file = filename[:-2] + '.cc'
       name = h_file[6:-2]
-      if (name + '.o') in targets:
+      if name + '.o' in targets:
         continue
       if not os.path.isfile(cc_file):
         raise Exception('.h files must have .cc files (for now)')
       h_local, h_sys = includes_from_file(h_file)
       cc_local, cc_sys = includes_from_file(cc_file)
-      # TODO(klimt): This is kinda wrong, because cc file includes shouldn't be transitive headers.
+      # TODO(klimt): cc file includes shouldn't really be transitive headers.
       local_includes = h_local + cc_local
       sys_includes = h_sys + cc_sys
       # Remove proto files.
@@ -199,7 +191,7 @@ def find_libs(targets, sysdeps):
       # Look up the library includes, and skip if any aren't loaded yet.
       skip = False
       for include in lib_includes:
-        if (include[:-1] + 'o') in targets:
+        if include[:-1] + 'o' in targets:
           dep = targets[include[:-1] + 'o']
           deps.append(dep)
         else:
@@ -215,17 +207,18 @@ def find_libs(targets, sysdeps):
       for include in sys_includes:
         for dep in sysdeps[include]:
           deps.append(dep)
-      targets[name + '.o'] = library(
-        name = name,
-        srcs = [cc_file],
-        hdrs = [h_file],
-        deps = deps)
+      targets[name + '.o'] = Library(
+          name=name,
+          srcs=[cc_file],
+          hdrs=[h_file],
+          deps=deps)
       added.append(name)
   if skipped:
     if added:
-      return find_libs(targets, sysdeps)
+      find_libs(targets, sysdeps)
     else:
-      raise Exception('circular dependency detected with: %s' % ' '.join(skipped))
+      raise Exception('circular dependency detected with: %s' %
+                      ' '.join(skipped))
 
 def find_bins(targets, sysdeps):
   for dirpath, dirnames, filenames in os.walk('./src'):
@@ -255,65 +248,64 @@ def find_bins(targets, sysdeps):
       for include in sys_includes:
         for dep in sysdeps[include]:
           deps.append(dep)
-      lib = library(
-        name = name,
-        srcs = [cc_file],
-        hdrs = [],
-        deps = deps)
+      lib = Library(
+          name=name,
+          srcs=[cc_file],
+          hdrs=[],
+          deps=deps)
       targets[name + '.o'] = lib
-      targets[name] = binary(
-        name = name,
-        deps = [lib])
+      targets[name] = Binary(
+          name=name,
+          deps=[lib])
 
 #
 # System deps
 #
 
-# TODO(klimt): Enable mac stuff
-if macos:
-  gflags = brew(name='gflags')
-  glog = brew(name='glog')
-  leveldb = brew(name='leveldb')
-  gtest = brew(name='gtest')
-  gtestmain = installed('gtest_main')
-  openssl = syslib(
-    includes=['-I$(shell brew --prefix openssl)/include'],
-    libs=['-lcrypto', '-L$(shell brew --prefix openssl)/lib'])
+if MAC_OS:
+  gflags = BrewLib(name='gflags')
+  glog = BrewLib(name='glog')
+  leveldb = BrewLib(name='leveldb')
+  gtest = BrewLib(name='gtest')
+  gtestmain = InstalledLib('gtest_main')
+  openssl = SysLib(
+      includes=['-I$(shell brew --prefix openssl)/include'],
+      libs=['-lcrypto', '-L$(shell brew --prefix openssl)/lib'])
 else:
-  gflags = installed('gflags')
-  glog = installed('glog')
-  gtest = syslib(includes=[], libs=['-lgtest', '-lpthread', '-lgtest_main'])
-  gtestmain = syslib()
-  leveldb = installed('leveldb')
-  openssl = syslib()
+  gflags = InstalledLib('gflags')
+  glog = InstalledLib('glog')
+  gtest = SysLib(includes=[], libs=['-lgtest', '-lpthread', '-lgtest_main'])
+  gtestmain = SysLib()
+  leveldb = InstalledLib('leveldb')
+  openssl = SysLib()
 
 sysdeps = {
-  'algorithm': [],
-  'cmath': [],
-  'cstring': [],
-  'dirent.h': [],
-  'errno.h': [],
-  'fcntl.h': [],
-  'fstream': [],
-  'iostream': [],
-  'map': [],
-  'memory': [],
-  'random': [],
-  'stdio.h': [],
-  'stdlib.h': [],
-  'streambuf': [],
-  'string': [],
-  'sys/mman.h': [],
-  'sys/stat.h': [],
-  'sys/types.h': [],
+    'algorithm': [],
+    'cmath': [],
+    'cstring': [],
+    'dirent.h': [],
+    'errno.h': [],
+    'fcntl.h': [],
+    'fstream': [],
+    'iostream': [],
+    'map': [],
+    'memory': [],
+    'random': [],
+    'stdio.h': [],
+    'stdlib.h': [],
+    'streambuf': [],
+    'string': [],
+    'sys/mman.h': [],
+    'sys/stat.h': [],
+    'sys/types.h': [],
 
-  'gflags/gflags.h': [gflags],
-  'glog/logging.h': [glog],
-  'google/protobuf/stubs/status.h': [protobuf],
-  'gtest/gtest.h': [gtest, gtestmain],
-  'leveldb/db.h': [leveldb],
-  'leveldb/write_batch.h': [leveldb],
-  'openssl/md5.h': [openssl],
+    'gflags/gflags.h': [gflags],
+    'glog/logging.h': [glog],
+    'google/protobuf/stubs/status.h': [PROTOBUF],
+    'gtest/gtest.h': [gtest, gtestmain],
+    'leveldb/db.h': [leveldb],
+    'leveldb/write_batch.h': [leveldb],
+    'openssl/md5.h': [openssl],
 }
 
 #
@@ -337,7 +329,7 @@ clean:
 	rm -rf gen || true
 
 format:
-	""" + clang + """ -i src/*
+	""" + CLANG + """ -i src/*
 
 .PRECIOUS: obj/%.o
 """)

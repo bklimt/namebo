@@ -20,6 +20,13 @@ To install dependencies on Ubuntu 16:
 
 Build [gtest](https://www.eriksmistad.no/getting-started-with-google-test-on-ubuntu/).
 
+To set up python:
+
+    mkdir env
+    virtualenv env
+    source ./env/bin/activate
+    pip3 install pylint
+
 To build the binaries:
 
     python3 build.py >Makefile
