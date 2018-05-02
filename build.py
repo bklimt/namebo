@@ -223,8 +223,7 @@ def find_libs(targets, sysdeps):
         deps.append(dep)
       # sys deps
       for include in sys_includes:
-        for dep in sysdeps[include]:
-          deps.append(dep)
+        deps.extend(sysdeps[include])
       targets[name + '.o'] = Library(
           name=name,
           srcs=[cc_file],
@@ -232,11 +231,10 @@ def find_libs(targets, sysdeps):
           deps=deps)
       added.append(name)
   if skipped:
-    if added:
-      find_libs(targets, sysdeps)
-    else:
+    if not added:
       raise Exception('circular dependency detected with: %s' %
                       ' '.join(skipped))
+    find_libs(targets, sysdeps)
 
 def find_bins(targets, sysdeps):
   """Finds all the .cc bins under src and adds their targets to targets."""
@@ -327,6 +325,10 @@ SYSDEPS = {
     'openssl/md5.h': [OPENSSL],
 }
 
+DIRS = ['bin', 'obj', 'gen']
+RM_DIR = '\trm -rf %s || true\n'
+CLEAN = 'clean:\n' + ''.join([RM_DIR % (d,) for d in DIRS])
+
 #
 # Makefile generation
 #
@@ -343,17 +345,9 @@ def main():
   bins = ' '.join(bins)
   print('all:', bins)
 
-  print("""
-  clean:
-    rm -rf bin || true
-    rm -rf obj || true
-    rm -rf gen || true
-
-  format:
-    """ + CLANG + """ -i src/*
-
-  .PRECIOUS: obj/%.o
-  """)
+  print(CLEAN)
+  print('format:\n\t' + CLANG + ' -i src/*\n')
+  print('.PRECIOUS: obj/%.o\n')
 
   # Print out each target.
   for target in sorted(targets):
