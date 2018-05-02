@@ -15,7 +15,7 @@ struct Segment {
 
 class Segmenter {
  public:
-  Segmenter(std::string &&text);
+  Segmenter(std::string &&text, bool break_words);
 
   bool Valid() { return pos_ < text_.size(); }
 
@@ -28,6 +28,7 @@ class Segmenter {
   int pos_;
   std::string text_;
   bool had_space_;
+  bool break_words_;
 };
 
 #endif  // __SEGMENTER_H__

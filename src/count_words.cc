@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
       std::string prev1 = "^";
       std::string prev2 = "^";
       std::string text = " " + line + " $";
-      Segmenter segmenter(std::move(text));
+      Segmenter segmenter(std::move(text), false);
       while (segmenter.Valid()) {
         Segment segment = segmenter.Next();
         wc.Add(segment, prev1, prev2);

@@ -6,7 +6,11 @@
 struct SegmenterTest : testing::Test {};
 
 void TestCase(const char *input, Segment expected[], int n) {
-  Segmenter seg(input);
+  Segmenter seg(input, false);
+}
+
+void TestCase(const char *input, bool break_words, Segment expected[], int n) {
+  Segmenter seg(input, break_words);
   for (int i = 0; i < n; ++i) {
     EXPECT_TRUE(seg.Valid());
     Segment s = seg.Next();
@@ -31,6 +35,30 @@ TEST_F(SegmenterTest, BasicTest) {
   };
   TestCase("  foo bar \xF0\x9F\x92\xA9 \U0001F4A9\U0001F4A9baz.qux?   ",
            expected, 9);
+}
+
+TEST_F(SegmenterTest, BreakWordsTest) {
+  Segment expected[] = {
+      {"f", "f", true},
+      {"o", "o", false},
+      {"o", "o", false},
+      {"b", "b", true},
+      {"a", "a", false},
+      {"r", "r", false},
+      {"\U0001F4A9", "\U0001F4A9", true},
+      {"\U0001F4A9", "\U0001F4A9", true},
+      {"\U0001F4A9", "\U0001F4A9", false},
+      {"b", "b", false},
+      {"a", "a", false},
+      {"z", "z", false},
+      {".", ".", false},
+      {"q", "q", false},
+      {"u", "u", false},
+      {"x", "x", false},
+      {"?", "?", false},
+  };
+  TestCase("  foo bar \xF0\x9F\x92\xA9 \U0001F4A9\U0001F4A9baz.qux?   ", true,
+           expected, 17);
 }
 
 TEST_F(SegmenterTest, AlphaTest) {

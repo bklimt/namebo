@@ -7,6 +7,7 @@
 #include <leveldb/db.h>
 
 #include "namebo.pb.h"
+#include "segmenter.h"
 
 DEFINE_string(input, "", "file of words to read in");
 DEFINE_string(output, "", "leveldb to write map to");
@@ -48,6 +49,8 @@ void UpdateWord(leveldb::DB *db, const std::string &prefix, char letter) {
   CHECK(s.ok());
 }
 
+bool IsWord(string_view s) { return s.size() > 0 && isalpha(s[0]); }
+
 int main(int argc, char **argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
@@ -69,24 +72,32 @@ int main(int argc, char **argv) {
   std::ifstream in(FLAGS_input.c_str());
   CHECK(in) << "Unable to open " << FLAGS_input << ".";
 
+  std::set<std::string> seen;
+
   std::string line;
   getline(in, line);
   while (in) {
-    std::cout << line << std::endl;
     if (!line.empty()) {
-      std::string word = "^" + line + "$";
-      for (int i = 1; i < word.size(); ++i) {
-        char letter = word[i];
-        // TODO(klimt): Make this handle unicode better than this.
-        if (!(isalnum(letter) || letter == ' ' || letter == '.' ||
-              letter == '^' || letter == '$')) {
-          letter = ' ';
-          word[i] = letter;
+      Segmenter word_segmenter(std::move(line), false);
+      while (word_segmenter.Valid()) {
+        Segment segment = word_segmenter.Next();
+        if (!IsWord(segment.token)) {
+          continue;
         }
-        for (int j = 1; j <= FLAGS_prefix_length; ++j) {
-          if (i - j >= 0) {
-            std::string prefix = word.substr(i - j, j);
-            UpdateWord(db, prefix, letter);
+        if (seen.find(segment.normalized_token) != seen.end()) {
+          //continue;
+        }
+        seen.insert(segment.normalized_token);
+        std::cout << segment.normalized_token << std::endl;
+
+        std::string word = "^" + segment.normalized_token + "$";
+        for (int i = 1; i < word.size(); ++i) {
+          char letter = word[i];
+          for (int j = 1; j <= FLAGS_prefix_length; ++j) {
+            if (i - j >= 0) {
+              std::string prefix = word.substr(i - j, j);
+              UpdateWord(db, prefix, letter);
+            }
           }
         }
       }

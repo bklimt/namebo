@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
     LOG(FATAL) << "--prefix_db is required";
   }
 
+  // TODO(klimt): Replace this with a better source of random.
   srand(time(NULL));
 
   leveldb::DB *db;

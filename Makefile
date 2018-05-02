@@ -16,11 +16,11 @@ bin/convert: obj/convert.o obj/namebo.o
 obj/convert.o: ./src/convert.cc gen/namebo.pb.h
 	mkdir -p obj && g++ -g -std=c++11 -I$(shell brew --prefix protobuf)/include -I$(shell brew --prefix gflags)/include -I$(shell brew --prefix glog)/include -I$(shell brew --prefix leveldb)/include -Igen -o $@ -c ./src/convert.cc
 
-bin/count: obj/count.o obj/namebo.o
-	mkdir -p bin && g++ -g -o $@ $^ -lprotobuf -L$(shell brew --prefix protobuf)/lib -lgflags -L$(shell brew --prefix gflags)/lib -lglog -L$(shell brew --prefix glog)/lib -lleveldb -L$(shell brew --prefix leveldb)/lib
+bin/count: obj/count.o obj/segmenter.o obj/string_view.o obj/namebo.o
+	mkdir -p bin && g++ -g -o $@ $^ -lleveldb -L$(shell brew --prefix leveldb)/lib -lprotobuf -L$(shell brew --prefix protobuf)/lib -lgflags -L$(shell brew --prefix gflags)/lib -lglog -L$(shell brew --prefix glog)/lib -lleveldb -L$(shell brew --prefix leveldb)/lib
 
-obj/count.o: ./src/count.cc gen/namebo.pb.h
-	mkdir -p obj && g++ -g -std=c++11 -I$(shell brew --prefix protobuf)/include -I$(shell brew --prefix gflags)/include -I$(shell brew --prefix glog)/include -I$(shell brew --prefix leveldb)/include -Igen -o $@ -c ./src/count.cc
+obj/count.o: ./src/count.cc ./src/segmenter.h ./src/string_view.h gen/namebo.pb.h
+	mkdir -p obj && g++ -g -std=c++11 -I$(shell brew --prefix leveldb)/include -I$(shell brew --prefix protobuf)/include -I$(shell brew --prefix gflags)/include -I$(shell brew --prefix glog)/include -I$(shell brew --prefix leveldb)/include -Igen -o $@ -c ./src/count.cc
 
 bin/count_words: obj/count_words.o obj/segmenter.o obj/string_view.o obj/word_counter.o obj/string_view.o obj/segmenter.o obj/string_view.o obj/namebo.o
 	mkdir -p bin && g++ -g -o $@ $^ -lleveldb -L$(shell brew --prefix leveldb)/lib -lleveldb -L$(shell brew --prefix leveldb)/lib -lleveldb -L$(shell brew --prefix leveldb)/lib -lprotobuf -L$(shell brew --prefix protobuf)/lib -lleveldb -L$(shell brew --prefix leveldb)/lib -lleveldb -L$(shell brew --prefix leveldb)/lib -lglog -L$(shell brew --prefix glog)/lib -lleveldb -L$(shell brew --prefix leveldb)/lib -lgflags -L$(shell brew --prefix gflags)/lib -lglog -L$(shell brew --prefix glog)/lib

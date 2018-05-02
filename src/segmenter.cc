@@ -1,7 +1,8 @@
 
 #include "segmenter.h"
 
-Segmenter::Segmenter(std::string &&text) : pos_(0), text_(text) {
+Segmenter::Segmenter(std::string &&text, bool break_words)
+    : pos_(0), text_(text), break_words_(break_words) {
   Canonicalize();
   SkipWhitespace();
 }
@@ -74,11 +75,15 @@ Segment Segmenter::Next() {
     }
   } else {
     // It's a word made of ascii alphanumeric characters.
-    while (pos_ < text_.size()) {
-      if (isalnum(text_[pos_]) || text_[pos_] == '\'') {
-        pos_++;
-      } else {
-        break;
+    if (break_words_) {
+      pos_++;
+    } else {
+      while (pos_ < text_.size()) {
+        if (isalnum(text_[pos_]) || text_[pos_] == '\'') {
+          pos_++;
+        } else {
+          break;
+        }
       }
     }
   }
