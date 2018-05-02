@@ -23,7 +23,7 @@ Build [gtest](https://www.eriksmistad.no/getting-started-with-google-test-on-ubu
 To set up python:
 
     mkdir env
-    virtualenv env
+    virtualenv -p python3 env
     source ./env/bin/activate
     pip3 install pylint
 

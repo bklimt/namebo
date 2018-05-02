@@ -1,4 +1,4 @@
-# A ridiculous python script to make Makefiles
+"""A ridiculous python script to make Makefiles."""
 
 import os
 import os.path
@@ -11,18 +11,21 @@ MAC_OS = platform.system() == 'Darwin'
 #
 
 class SysLib:
+  """A library installed on the system."""
   def __init__(self, includes=None, libs=None):
     self.includes = includes or []
     self.libs = libs or []
     self.default = False
 
 class BrewLib(SysLib):
+  """A library installed with brew."""
   def __init__(self, name):
     super().__init__(
         includes=['-I$(shell brew --prefix ' + name + ')/include'],
         libs=['-l' + name, '-L$(shell brew --prefix ' + name + ')/lib'])
 
 class InstalledLib(SysLib):
+  """A library installed in the normal lib path."""
   def __init__(self, name):
     super().__init__(
         includes=[],
@@ -39,6 +42,7 @@ else:
   CLANG = 'clang-format-3.8'
 
 def all_deps(obj):
+  """Recursively visits all deps of the given obj."""
   d = []
   if hasattr(obj, 'deps'):
     for d1 in obj.deps:
@@ -48,6 +52,7 @@ def all_deps(obj):
   return d
 
 class Library:
+  """A library in this project consisting of a .h and .cc file."""
   def __init__(self, name, srcs=None, hdrs=None, deps=None):
     self.name = name
     self.srcs = srcs or []
@@ -55,6 +60,7 @@ class Library:
     self.deps = deps or []
     self.default = False
   def all_headers(self):
+    """Returns all the hdrs attributes of this library and its deps."""
     hs = list(self.hdrs)
     for d in all_deps(self):
       if hasattr(d, 'hdrs'):
@@ -62,15 +68,18 @@ class Library:
           hs.append(h)
     return hs
   def obj(self):
+    """Returns the path of the object file for this library."""
     return 'obj/' + self.name + '.o'
   def all_includes(self):
-    all = []
+    """Returns all includes for this library and its deps."""
+    inc = []
     for d in all_deps(self):
       if hasattr(d, 'includes'):
         for i in d.includes:
-          all.append(i)
-    return all
+          inc.append(i)
+    return inc
   def make(self):
+    """Returns the lines for the Makefile for this library."""
     inc = ' '.join(self.all_includes())
     if inc != '':
       inc = inc + ' '
@@ -83,10 +92,12 @@ class Library:
     return s
 
 class ProtoSrc:
+  """A target for generating .pb.cc and .pb.h files for a .proto."""
   def __init__(self, name):
     self.name = name
     self.default = False
   def make(self):
+    """Returns the lines for the Makefile for this target."""
     s = ('gen/' + self.name + '.pb.cc gen/' + self.name + '.pb.h: src/' +
          self.name + '.proto\n')
     s = s + '\tmkdir -p gen && '
@@ -95,6 +106,7 @@ class ProtoSrc:
     return s
 
 class ProtoLib(Library):
+  """A target for creating a .o file from .pb.cc and .pb.h files."""
   def __init__(self, name, deps=None):
     super().__init__(
         name=name,
@@ -103,24 +115,28 @@ class ProtoLib(Library):
         deps=deps or [])
 
 class Binary:
+  """A target representing a binary."""
   def __init__(self, name, deps):
     self.name = name
     self.deps = deps
     self.default = True
   def all_obj(self):
-    all = []
+    """Returns all objs from this target and its deps."""
+    objs = []
     for d in all_deps(self):
       if hasattr(d, 'obj'):
-        all.append(d.obj())
-    return all
+        objs.append(d.obj())
+    return objs
   def all_libs(self):
-    all = []
+    """Returns all libs from this target and its deps."""
+    libs = []
     for d in all_deps(self):
       if hasattr(d, 'libs'):
         for l in d.libs:
-          all.append(l)
-    return all
+          libs.append(l)
+    return libs
   def make(self):
+    """Returns the lines for the Makefile for generating this target."""
     s = 'bin/' + self.name + ': '
     s = s + ' '.join(self.all_obj()) + '\n'
     s = s + '\tmkdir -p bin && g++ -g -o $@ $^ '
@@ -133,6 +149,7 @@ class Binary:
 #
 
 def includes_from_file(filename):
+  """Returns all the files included from the given file."""
   f = open(filename, 'r')
   s = f.read()
   f.close()
@@ -151,7 +168,8 @@ def includes_from_file(filename):
   return local, system
 
 def find_protos(targets):
-  for dirpath, dirnames, filenames in os.walk('./src'):
+  """Finds all the protos under src and adds their targets to targets."""
+  for dirpath, _, filenames in os.walk('./src'):
     for filename in filenames:
       filename = os.path.join(dirpath, filename)
       if not filename.endswith('.proto'):
@@ -162,10 +180,10 @@ def find_protos(targets):
       targets[name + '.o'] = ProtoLib(name, deps=[src, PROTOBUF])
 
 def find_libs(targets, sysdeps):
+  """Finds all the .h/.cc libs under src and adds their targets to targets."""
   added = []
   skipped = []
-  libs = []
-  for dirpath, dirnames, filenames in os.walk('./src'):
+  for dirpath, _, filenames in os.walk('./src'):
     for filename in filenames:
       filename = os.path.join(dirpath, filename)
       if not filename.endswith('.h'):
@@ -221,7 +239,8 @@ def find_libs(targets, sysdeps):
                       ' '.join(skipped))
 
 def find_bins(targets, sysdeps):
-  for dirpath, dirnames, filenames in os.walk('./src'):
+  """Finds all the .cc bins under src and adds their targets to targets."""
+  for dirpath, _, filenames in os.walk('./src'):
     for filename in filenames:
       filename = os.path.join(dirpath, filename)
       if not filename.endswith('.cc'):
@@ -263,23 +282,23 @@ def find_bins(targets, sysdeps):
 #
 
 if MAC_OS:
-  gflags = BrewLib(name='gflags')
-  glog = BrewLib(name='glog')
-  leveldb = BrewLib(name='leveldb')
-  gtest = BrewLib(name='gtest')
-  gtestmain = InstalledLib('gtest_main')
-  openssl = SysLib(
+  GFLAGS = BrewLib(name='gflags')
+  GLOG = BrewLib(name='glog')
+  GTEST = BrewLib(name='gtest')
+  GTEST_MAIN = InstalledLib('gtest_main')
+  LEVELDB = BrewLib(name='leveldb')
+  OPENSSL = SysLib(
       includes=['-I$(shell brew --prefix openssl)/include'],
       libs=['-lcrypto', '-L$(shell brew --prefix openssl)/lib'])
 else:
-  gflags = InstalledLib('gflags')
-  glog = InstalledLib('glog')
-  gtest = SysLib(includes=[], libs=['-lgtest', '-lpthread', '-lgtest_main'])
-  gtestmain = SysLib()
-  leveldb = InstalledLib('leveldb')
-  openssl = SysLib()
+  GFLAGS = InstalledLib('gflags')
+  GLOG = InstalledLib('glog')
+  GTEST = SysLib(includes=[], libs=['-lgtest', '-lpthread', '-lgtest_main'])
+  GTEST_MAIN = SysLib()
+  LEVELDB = InstalledLib('leveldb')
+  OPENSSL = SysLib()
 
-sysdeps = {
+SYSDEPS = {
     'algorithm': [],
     'cmath': [],
     'cstring': [],
@@ -299,41 +318,45 @@ sysdeps = {
     'sys/stat.h': [],
     'sys/types.h': [],
 
-    'gflags/gflags.h': [gflags],
-    'glog/logging.h': [glog],
+    'gflags/gflags.h': [GFLAGS],
+    'glog/logging.h': [GLOG],
     'google/protobuf/stubs/status.h': [PROTOBUF],
-    'gtest/gtest.h': [gtest, gtestmain],
-    'leveldb/db.h': [leveldb],
-    'leveldb/write_batch.h': [leveldb],
-    'openssl/md5.h': [openssl],
+    'gtest/gtest.h': [GTEST, GTEST_MAIN],
+    'leveldb/db.h': [LEVELDB],
+    'leveldb/write_batch.h': [LEVELDB],
+    'openssl/md5.h': [OPENSSL],
 }
 
 #
 # Makefile generation
 #
+def main():
+  """Prints a Makefile based on the files under src."""
+  targets = {}
+  find_protos(targets)
+  find_libs(targets, SYSDEPS)
+  find_bins(targets, SYSDEPS)
 
-targets = {}
-find_protos(targets)
-find_libs(targets, sysdeps)
-find_bins(targets, sysdeps)
+  # Print out the default rule with all binaries.
+  bins = ['bin/' + targets[t].name for t in sorted(targets)
+          if targets[t].default]
+  bins = ' '.join(bins)
+  print('all:', bins)
 
-# Print out the default rule with all binaries.
-bins = ['bin/' + targets[t].name for t in sorted(targets) if targets[t].default]
-bins = ' '.join(bins)
-print('all:', bins)
+  print("""
+  clean:
+    rm -rf bin || true
+    rm -rf obj || true
+    rm -rf gen || true
 
-print("""
-clean:
-	rm -rf bin || true
-	rm -rf obj || true
-	rm -rf gen || true
+  format:
+    """ + CLANG + """ -i src/*
 
-format:
-	""" + CLANG + """ -i src/*
+  .PRECIOUS: obj/%.o
+  """)
 
-.PRECIOUS: obj/%.o
-""")
+  # Print out each target.
+  for target in sorted(targets):
+    print(targets[target].make())
 
-# Print out each target.
-for target in sorted(targets):
-  print(targets[target].make())
+main()
