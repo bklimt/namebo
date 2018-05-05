@@ -2,6 +2,7 @@
 """Module for processing Facebook post export into text."""
 
 import io
+import re
 import sys
 import xml.etree.ElementTree
 
@@ -38,6 +39,15 @@ def allnodes(node):
     for n in allnodes(child):
       yield n
 
+def striplinks(text):
+  """ Replaces URLs in text with spaces. """
+  match = re.search('https?://[^ ]*', text)
+  while match:
+    # url = text[match.start():match.end()]
+    text = text[:match.start()] + ' ' + text[match.end():]
+    match = re.search('https?://[^ ]*', text)
+  return text
+
 def dumpposts(argv):
   """Prints out a text version of all the posts in the given html file."""
   good = True
@@ -53,10 +63,10 @@ def dumpposts(argv):
         continue
       if node.text[0:4].lower() == '[fb]':
         continue
-      print(node.text)
+      print(striplinks(node.text))
       print('')
     else:
-#There was a strange div that means it's not a regular post.
+      # There was a strange div that means it's not a regular post.
       good = False
 
 dumpposts(sys.argv)
