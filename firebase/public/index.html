@@ -1,0 +1,77 @@
+<html>
+
+<head>
+  <title>Words</title>
+  <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <!-- update the version number as needed -->
+  <script defer src="/__/firebase/7.6.1/firebase-app.js"></script>
+  <!-- include only the Firebase features as you need -->
+  <script defer src="/__/firebase/7.6.1/firebase-functions.js"></script>
+  <!-- initialize the SDK after all desired features are loaded -->
+  <script defer src="/__/firebase/init.js"></script>
+  <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+  <style>
+    body {
+      margin-top: 10%;
+      font-family: 'Open Sans', sans-serif;
+    }
+
+    h1 {
+      font-weight: normal;
+      font-size: 96px;
+      margin: 0px;
+      margin-bottom: 50px;
+    }
+
+    #main {
+      width: 100%;
+      text-align: center;
+    }
+
+    #next {
+      width: 150px;
+      height: 100px;
+      font-size: 32px;
+      margin-top: 50px;
+    }
+  </style>
+  <script type="application/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+      $(function () {
+        var word = $("#word");
+        var next = $("#next");
+
+        var generate = function () {
+          next.prop("disabled", true);
+
+          var genWord = firebase.functions().httpsCallable("word");
+
+          genWord.call().then(function (result) {
+            word.html(result.data);
+          }, function (error) {
+            word.html("Error");
+          }).then(function () {
+            next.prop("disabled", false);
+          });
+        };
+
+        next.click(function () {
+          generate();
+        });
+
+        generate();
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <div id="main">
+    <h1><span id="word">Loading...</span></h1>
+    <span>This is a <a href="https://github.com/bklimt/namebo/">randomly-generated</a> English-like word.</span>
+    <br />
+    <button id="next" type="button" disabled="true">next</button>
+  </div>
+</body>
+
+</html>
