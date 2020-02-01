@@ -13,6 +13,8 @@ DEFINE_double(bigram_weight, 1.0, "weight considering 1 letter prefix");
 DEFINE_double(trigram_weight, 100.0, "weight considering 2 letter prefix");
 DEFINE_double(quadgram_weight, 10000.0, "weight considering 3 letter prefix");
 
+DEFINE_int32(count, 1, "how many words to generate");
+
 void GetPrefixData(leveldb::DB *db, const std::string &prefix,
                    PrefixData *prefix_data) {
   std::string value;
@@ -107,28 +109,30 @@ int main(int argc, char **argv) {
   leveldb::Status status = leveldb::DB::Open(options, FLAGS_prefix_db, &db);
   CHECK(status.ok()) << "Unable to open " << FLAGS_prefix_db << ".";
 
-  std::string word = "^";
-  while (word[word.size() - 1] != '$' && word[word.size() - 1] != '?') {
-    PrefixData prefix_data;
-    GetData(db, word, &prefix_data);
-    LOG(INFO) << "DATA: " << prefix_data.ShortDebugString();
+  for (int i = 0; i < FLAGS_count; i++) {
+    std::string word = "^";
+    while (word[word.size() - 1] != '$' && word[word.size() - 1] != '?') {
+      PrefixData prefix_data;
+      GetData(db, word, &prefix_data);
+      LOG(INFO) << "DATA: " << prefix_data.ShortDebugString();
 
-    word = word + ChooseNext(prefix_data);
-    LOG(INFO) << "WORD: " << word;
+      word = word + ChooseNext(prefix_data);
+      LOG(INFO) << "WORD: " << word;
 
-    if (word.size() > 1000) {
-      break;
+      if (word.size() > 1000) {
+        break;
+      }
     }
-  }
 
-  if (word.size() > 0 && word[0] == '^') {
-    word = word.substr(1, word.size() - 1);
-  }
-  if (word.size() > 0 && word[word.size() - 1] == '$') {
-    word = word.substr(0, word.size() - 1);
-  }
+    if (word.size() > 0 && word[0] == '^') {
+      word = word.substr(1, word.size() - 1);
+    }
+    if (word.size() > 0 && word[word.size() - 1] == '$') {
+      word = word.substr(0, word.size() - 1);
+    }
 
-  std::cout << word << std::endl;
+    std::cout << word << std::endl;
+  }
 
   delete db;
   return 0;

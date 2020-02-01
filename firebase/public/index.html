@@ -7,6 +7,7 @@
   <script defer src="/__/firebase/7.6.1/firebase-app.js"></script>
   <!-- include only the Firebase features as you need -->
   <script defer src="/__/firebase/7.6.1/firebase-functions.js"></script>
+  <script defer src="/__/firebase/7.6.1/firebase-firestore.js"></script>
   <!-- initialize the SDK after all desired features are loaded -->
   <script defer src="/__/firebase/init.js"></script>
   <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
@@ -34,30 +35,71 @@
       font-size: 32px;
       margin-top: 50px;
     }
+
+    #next_up {
+      width: 150px;
+      height: 100px;
+      font-size: 32px;
+      margin-top: 50px;
+    }
+
+    #next_down {
+      width: 150px;
+      height: 100px;
+      font-size: 32px;
+      margin-top: 50px;
+    }
   </style>
   <script type="application/javascript">
     document.addEventListener('DOMContentLoaded', function () {
+      var db = firebase.firestore();
+
       $(function () {
         var word = $("#word");
         var next = $("#next");
+        var nextUp = $("#next_up");
+        var nextDown = $("#next_down");
+        var data = null;
 
         var generate = function () {
           next.prop("disabled", true);
+          nextUp.prop("disabled", true);
+          nextDown.prop("disabled", true);
 
           var genWord = firebase.functions().httpsCallable("word");
 
           genWord.call().then(function (result) {
-            word.html(result.data);
+            data = result.data;
+            word.html(data);
           }, function (error) {
             word.html("Error");
           }).then(function () {
             next.prop("disabled", false);
+            nextUp.prop("disabled", false);
+            nextDown.prop("disabled", false);
           });
         };
 
-        next.click(function () {
-          generate();
-        });
+        var saveAndGenerate = function (score) {
+          next.prop("disabled", true);
+          nextUp.prop("disabled", true);
+          nextDown.prop("disabled", true);
+
+          db.collection("words").doc(data).collection("scores").add({
+            word: data,
+            score: score,
+          }).then(function () {
+            console.log("saved " + data);
+          }, function (error) {
+            console.log(error);
+          }).then(function () {
+            generate();
+          });
+        };
+
+        next.click(generate);
+        nextUp.click(function () { saveAndGenerate(1); });
+        nextDown.click(function () { saveAndGenerate(-1); });
 
         generate();
       });
@@ -70,7 +112,9 @@
     <h1><span id="word">Loading...</span></h1>
     <span>This is a <a href="https://github.com/bklimt/namebo/">randomly-generated</a> English-like word.</span>
     <br />
+    <button id="next_down" type="button" disabled="true">👎</button>
     <button id="next" type="button" disabled="true">next</button>
+    <button id="next_up" type="button" disabled="true">👍</button>
   </div>
 </body>
 
