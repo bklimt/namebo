@@ -1,0 +1,58 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Words</title>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="module" src="index.js"></script>
+    <link href='//fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <style>
+      body {
+        margin-top: 10%;
+        font-family: 'Open Sans', sans-serif;
+      }
+
+      h1 {
+        font-weight: normal;
+        font-size: 96px;
+        margin: 0px;
+        margin-bottom: 50px;
+      }
+
+      #main {
+        width: 100%;
+        text-align: center;
+      }
+
+      #next {
+        width: 150px;
+        height: 100px;
+        font-size: 32px;
+        margin-top: 50px;
+      }
+
+      #next_up {
+        width: 150px;
+        height: 100px;
+        font-size: 32px;
+        margin-top: 50px;
+      }
+
+      #next_down {
+        width: 150px;
+        height: 100px;
+        font-size: 32px;
+        margin-top: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+      <h1><span id="word">Loading...</span></h1>
+      <span>This is a <a href="https://github.com/bklimt/namebo/">randomly-generated</a> English-like word.</span>
+      <br />
+      <!-- <button id="next_down" type="button" disabled="true">👎</button> -->
+      <button id="next" type="button" disabled="true">next</button>
+      <!-- <button id="next_up" type="button" disabled="true">👍</button> -->
+    </div>
+  </body>
+</html>

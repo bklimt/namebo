@@ -1,0 +1,24 @@
+{
+  "name": "namebo",
+  "version": "1.0.0",
+  "description": "A simple site for generating English-like words.",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc && npm run build:cp-public",
+    "build:cp-public": "cp ./public/** ./dist",
+    "type": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bklimt/namebo.git"
+  },
+  "author": "bklimt@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bklimt/namebo/issues"
+  },
+  "homepage": "https://github.com/bklimt/namebo#readme",
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
