@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use clap::Parser;
-use serde::Serialize;
-use std::collections::HashMap;
+use namebo::WordMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -13,82 +12,8 @@ struct Args {
     input: String,
 }
 
-#[derive(Debug, Serialize)]
-struct MapEntry {
-    total: i32,
-    next: HashMap<char, i32>,
-}
-
-impl MapEntry {
-    fn new() -> MapEntry {
-        MapEntry {
-            total: 0,
-            next: HashMap::new(),
-        }
-    }
-
-    fn add(&mut self, next: char) {
-        self.total += 1;
-        if !self.next.contains_key(&next) {
-            self.next.insert(next, 0);
-        }
-        let current: &mut i32 = self.next.get_mut(&next).unwrap();
-        *current += 1;
-    }
-}
-
-#[derive(Debug, Serialize)]
-struct WordMap {
-    total: i32,
-    entries: HashMap<String, MapEntry>,
-}
-
-impl WordMap {
-    fn new() -> WordMap {
-        WordMap {
-            total: 0,
-            entries: HashMap::new(),
-        }
-    }
-
-    fn add_suffix(&mut self, prefix: &str, c: char) {
-        // println!("adding suffix {:?} for {:?}", c, prefix);
-        self.total += 1;
-        if !self.entries.contains_key(prefix) {
-            self.entries.insert(prefix.to_string(), MapEntry::new());
-        }
-        self.entries.get_mut(prefix).unwrap().add(c)
-    }
-
-    fn add_word(&mut self, word: &str) {
-        let mut previous: Vec<usize> = Vec::new();
-        for (i, c) in word.char_indices() {
-            let (seen, _) = word.split_at(i);
-            if previous.len() >= 3 {
-                // trigram
-                let j = previous[previous.len() - 3];
-                let (_, prefix) = seen.split_at(j);
-                self.add_suffix(prefix, c);
-            }
-            if previous.len() >= 2 {
-                // bigram
-                let j = previous[previous.len() - 2];
-                let (_, prefix) = seen.split_at(j);
-                self.add_suffix(prefix, c);
-            }
-            if previous.len() >= 1 {
-                // unigram
-                let j = previous[previous.len() - 1];
-                let (_, prefix) = seen.split_at(j);
-                self.add_suffix(prefix, c);
-            }
-            previous.push(i);
-        }
-    }
-}
-
 fn is_valid_char(c: char) -> bool {
-    if c.is_ascii_alphabetic() {
+    if c.is_ascii_lowercase() {
         return true;
     }
     if c == '\'' {
@@ -135,10 +60,11 @@ fn process(args: &Args) -> Result<()> {
         if !is_word(line) {
             continue;
         }
-        let line = line.to_lowercase();
+        // println!("{}", line);
+        // let line = line.to_lowercase();
         let word = format!("^{}$", line);
 
-        map.add_word(&word);
+        map.add_word_str(&word);
     }
 
     println!("{}", serde_json::to_string(&map)?);

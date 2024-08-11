@@ -1,5 +1,5 @@
 
-import { SuffixScores, SUFFIX_MAP } from './map.js';
+import { SuffixScores, WORD_MAP } from './map.js';
 
 function choose(data: SuffixScores): string {
   let sum = 0;
@@ -10,7 +10,7 @@ function choose(data: SuffixScores): string {
   let r = Math.random() * sum;
   for (var suffix in data) {
     r -= data[suffix];
-    if (r <= 0) {
+    if (r <= 0.0001) {
       return suffix;
     }
   }
@@ -21,7 +21,7 @@ function choose(data: SuffixScores): string {
 export function generate(): string {
   let word = "^";
   while (word[word.length - 1] !== '$' && word[word.length - 1] !== '?') {
-    const data = SUFFIX_MAP[word.substr(-3)];
+    const data = WORD_MAP[word.substr(-3)];
     word = word + choose(data);
   }
   if (word[0] === '^') {
