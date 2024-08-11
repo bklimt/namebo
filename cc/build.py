@@ -39,7 +39,7 @@ if MAC_OS:
 else:
   PROTOBUF = InstalledLib(name='protobuf')
   PROTOC = 'protoc'
-  CLANG = 'clang-format-3.8'
+  CLANG = 'clang-format'
 
 def all_deps(obj):
   """Recursively visits all deps of the given obj."""

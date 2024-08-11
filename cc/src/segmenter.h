@@ -2,6 +2,7 @@
 #define __SEGMENTER_H__
 
 #include <string>
+
 #include "string_view.h"
 
 struct Segment {

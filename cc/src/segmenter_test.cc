@@ -1,7 +1,7 @@
 
-#include <gtest/gtest.h>
-
 #include "segmenter.h"
+
+#include <gtest/gtest.h>
 
 struct SegmenterTest : testing::Test {};
 
@@ -63,7 +63,8 @@ TEST_F(SegmenterTest, BreakWordsTest) {
 
 TEST_F(SegmenterTest, AlphaTest) {
   Segment expected[] = {
-      {"Foo", "foo", false}, {"BaR", "bar", true},
+      {"Foo", "foo", false},
+      {"BaR", "bar", true},
   };
   TestCase("Foo BaR", expected, 2);
 }

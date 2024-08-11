@@ -5,7 +5,7 @@ clean:
 	rm -rf gen || true
 
 format:
-	clang-format-3.8 -i src/*
+	clang-format -i src/*
 
 .PRECIOUS: obj/%.o
 

@@ -1,37 +1,19 @@
-/*
- * Creates a JSON representation of the weighted frequency map.
- */
-
-#include <iostream>
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <leveldb/db.h>
 
+#include <iostream>
+
 #include "namebo.pb.h"
 
 DEFINE_string(prefix_db, "", "leveldb with prefix data");
-
-DEFINE_bool(module, false, "if true, export as a node module");
 
 DEFINE_double(bigram_weight, 1.0, "weight considering 1 letter prefix");
 DEFINE_double(trigram_weight, 100.0, "weight considering 2 letter prefix");
 DEFINE_double(quadgram_weight, 10000.0, "weight considering 3 letter prefix");
 
-void PrintSuffixJSON(const SuffixData &suffix_data) {
-  std::cout << "\"" << suffix_data.letter() << "\":" << suffix_data.count();
-}
-
-void PrintPrefixJSON(const PrefixData &prefix_data) {
-  std::cout << "\"" << prefix_data.prefix() << "\":{";
-  for (int i = 0; i < prefix_data.suffix_size(); ++i) {
-    if (i) {
-      std::cout << ",";
-    }
-    PrintSuffixJSON(prefix_data.suffix(i));
-  }
-  std::cout << "}" << std::endl;
-}
+DEFINE_int32(count, 1, "how many words to generate");
 
 void GetPrefixData(leveldb::DB *db, const std::string &prefix,
                    PrefixData *prefix_data) {
@@ -91,6 +73,25 @@ void GetData(leveldb::DB *db, const std::string &word,
   }
 }
 
+std::string ChooseNext(const PrefixData &prefix_data) {
+  double sum = 0.0;
+  for (int i = 0; i < prefix_data.suffix_size(); ++i) {
+    sum += prefix_data.suffix(i).count();
+  }
+
+  double r = ((rand() % 100000) * sum) / 100000.0;
+  LOG(INFO) << "RANDOM: " << r << " / " << sum;
+
+  for (int i = 0; i < prefix_data.suffix_size(); ++i) {
+    r -= prefix_data.suffix(i).count();
+    if (r <= 0) {
+      return prefix_data.suffix(i).letter();
+    }
+  }
+
+  return "?";
+}
+
 int main(int argc, char **argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
@@ -99,6 +100,7 @@ int main(int argc, char **argv) {
     LOG(FATAL) << "--prefix_db is required";
   }
 
+  // TODO(klimt): Replace this with a better source of random.
   srand(time(NULL));
 
   leveldb::DB *db;
@@ -107,36 +109,30 @@ int main(int argc, char **argv) {
   leveldb::Status status = leveldb::DB::Open(options, FLAGS_prefix_db, &db);
   CHECK(status.ok()) << "Unable to open " << FLAGS_prefix_db << ".";
 
-  if (FLAGS_module) {
-    std::cout << "module.exports = ";
-  }
+  for (int i = 0; i < FLAGS_count; i++) {
+    std::string word = "^";
+    while (word[word.size() - 1] != '$' && word[word.size() - 1] != '?') {
+      PrefixData prefix_data;
+      GetData(db, word, &prefix_data);
+      LOG(INFO) << "DATA: " << prefix_data.ShortDebugString();
 
-  std::cout << "{" << std::endl;
+      word = word + ChooseNext(prefix_data);
+      LOG(INFO) << "WORD: " << word;
 
-  bool first = true;
-  leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
-  for (it->SeekToFirst(); it->Valid(); it->Next()) {
-    if (!first) {
-      std::cout << ",";
+      if (word.size() > 1000) {
+        break;
+      }
     }
-    first = false;
 
-    PrefixData prefix_data;
-    GetData(db, it->key().ToString(), &prefix_data);
-    prefix_data.set_prefix(it->key().ToString());
+    if (word.size() > 0 && word[0] == '^') {
+      word = word.substr(1, word.size() - 1);
+    }
+    if (word.size() > 0 && word[word.size() - 1] == '$') {
+      word = word.substr(0, word.size() - 1);
+    }
 
-    PrintPrefixJSON(prefix_data);
+    std::cout << word << std::endl;
   }
-  CHECK(it->status().ok());
-  delete it;
-
-  std::cout << "}";
-
-  if (FLAGS_module) {
-    std::cout << ";";
-  }
-
-  std::cout << std::endl;
 
   delete db;
   return 0;

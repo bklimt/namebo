@@ -43,7 +43,7 @@ def striplinks(text):
   """ Replaces URLs in text with spaces. """
   match = re.search('https?://[^ ]*', text)
   while match:
-    # url = text[match.start():match.end()]
+#url = text[match.start() : match.end()]
     text = text[:match.start()] + ' ' + text[match.end():]
     match = re.search('https?://[^ ]*', text)
   return text
@@ -66,7 +66,7 @@ def dumpposts(argv):
       print(striplinks(node.text))
       print('')
     else:
-      # There was a strange div that means it's not a regular post.
+#There was a strange div that means it's not a regular post.
       good = False
 
 dumpposts(sys.argv)

@@ -1,8 +1,9 @@
 
+#include "word_counter.h"
+
 #include <gtest/gtest.h>
 
 #include "segmenter.h"
-#include "word_counter.h"
 
 struct WordCounterTest : testing::Test {};
 

@@ -1,10 +1,10 @@
 
-#include <fstream>
-#include <iostream>
-
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <leveldb/db.h>
+
+#include <fstream>
+#include <iostream>
 
 #include "namebo.pb.h"
 #include "segmenter.h"

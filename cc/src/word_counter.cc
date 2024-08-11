@@ -3,6 +3,7 @@
 
 #include <glog/logging.h>
 #include <leveldb/write_batch.h>
+
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -49,8 +50,8 @@ WordCounter::WordCounter(const std::string& path)
   if (global_stream) {
     std::string str((std::istreambuf_iterator<char>(global_stream)),
                     std::istreambuf_iterator<char>());
-    CHECK(global_.ParseFromString(str)) << "Unable to parse " << global_path_
-                                        << ".";
+    CHECK(global_.ParseFromString(str))
+        << "Unable to parse " << global_path_ << ".";
   } else {
     std::ofstream out(global_path_.c_str());
     CHECK(out) << "Unable to open " << global_path_ << ".";

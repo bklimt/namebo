@@ -1,9 +1,9 @@
 
-#include <fstream>
-#include <iostream>
-
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+
+#include <fstream>
+#include <iostream>
 
 #include "segmenter.h"
 #include "word_counter.h"
